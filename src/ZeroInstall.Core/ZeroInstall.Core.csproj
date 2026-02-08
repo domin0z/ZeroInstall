@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ZeroInstall.Core.Tests" />
+    <InternalsVisibleTo Include="ZeroInstall.CLI.Tests" />
   </ItemGroup>
 
   <ItemGroup>

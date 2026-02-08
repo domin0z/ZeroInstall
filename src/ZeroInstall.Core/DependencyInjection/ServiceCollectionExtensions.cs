@@ -1,24 +1,53 @@
 using Microsoft.Extensions.DependencyInjection;
+using ZeroInstall.Core.Discovery;
+using ZeroInstall.Core.Migration;
 using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.Core.DependencyInjection;
 
 /// <summary>
 /// Extension methods to register ZeroInstall.Core services into the DI container.
-/// Implementations are registered by the host projects (App, Agent, CLI).
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers all core service interfaces. Call this from the host's startup,
-    /// then register concrete implementations for each interface.
+    /// Registers all core services (infrastructure, discovery, migration, profile/settings).
+    /// IJobLogger and IProfileManager are NOT registered here — they require runtime paths
+    /// and must be registered by the host project.
     /// </summary>
     public static IServiceCollection AddZeroInstallCore(this IServiceCollection services)
     {
-        // Core services are registered by the consuming host project
-        // which provides the concrete implementations.
-        // This method serves as the central registration point and
-        // can be extended with default/shared registrations.
+        // Infrastructure (singletons)
+        services.AddSingleton<IRegistryAccessor, WindowsRegistryAccessor>();
+        services.AddSingleton<IFileSystemAccessor, WindowsFileSystemAccessor>();
+        services.AddSingleton<IProcessRunner, WindowsProcessRunner>();
+
+        // Discovery (transient)
+        services.AddTransient<ApplicationDiscoveryService>();
+        services.AddTransient<UserProfileDiscoveryService>();
+        services.AddTransient<SystemSettingsDiscoveryService>();
+        services.AddTransient<IDiscoveryService, DiscoveryService>();
+
+        // Tier 1 — Package-based migration
+        services.AddTransient<AppDataCaptureHelper>();
+        services.AddTransient<IPackageMigrator, PackageMigratorService>();
+
+        // Tier 2 — Registry + file capture
+        services.AddTransient<RegistryCaptureService>();
+        services.AddTransient<FileCaptureService>();
+        services.AddTransient<IRegistryMigrator, RegistryFileMigratorService>();
+
+        // Tier 3 — Full disk clone
+        services.AddTransient<IDiskCloner, DiskClonerService>();
+
+        // Profile & settings migration
+        services.AddTransient<ProfileTransferService>();
+        services.AddTransient<BrowserDataService>();
+        services.AddTransient<EmailDataService>();
+        services.AddTransient<SystemSettingsReplayService>();
+        services.AddTransient<IUserPathRemapper, UserPathRemapService>();
+        services.AddTransient<IUserAccountManager, UserAccountService>();
+        services.AddTransient<ProfileSettingsMigratorService>();
 
         return services;
     }

@@ -1,0 +1,235 @@
+===============================================================================
+  ZeroInstall Migrator CLI (zim) — Command Reference
+===============================================================================
+
+OVERVIEW
+
+  zim is the command-line interface for ZeroInstall Migrator. It provides
+  scripting and automation capabilities for PC migration tasks, mirroring all
+  functionality available in the WPF GUI application.
+
+  The CLI is designed to run portably from a USB flash drive alongside the
+  main application. All data (jobs, profiles, logs) is stored relative to the
+  executable location.
+
+INSTALLATION
+
+  No installation required. Copy the zim executable to your USB flash drive
+  or run directly from the build output:
+
+    dotnet run --project src/ZeroInstall.CLI -- <command> [options]
+
+  For published builds:
+
+    zim <command> [options]
+
+GLOBAL OPTIONS
+
+  --verbose, -v     Enable verbose/debug output (logs to stderr)
+  --json            Output results as JSON (for piping/scripting)
+  --help, -h, -?    Show help and usage information
+  --version         Show version information
+
+===============================================================================
+COMMANDS
+===============================================================================
+
+-------------------------------------------------------------------------------
+discover
+-------------------------------------------------------------------------------
+
+  Scans this machine for applications, user profiles, and system settings.
+
+  USAGE:
+    zim discover [--type <type>] [--json] [--verbose]
+
+  OPTIONS:
+    --type <type>   Type of items to discover [default: all]
+                    Values: apps, profiles, settings, all
+
+  EXAMPLES:
+    zim discover                          Discover everything
+    zim discover --type apps              Discover only applications
+    zim discover --type profiles          Discover only user profiles
+    zim discover --json                   Output as JSON for scripting
+    zim discover --type apps --json       Discover apps, output as JSON
+
+  OUTPUT (table mode):
+    Type            Name                                     Size      Tier
+    ---------------------------------------------------------------------------
+    Application     Google Chrome                            125.4 MB  Package
+    Application     CustomApp                                 45.2 MB  RegistryFile
+    UserProfile     Bill                                       2.1 GB  Package
+    SystemSetting   WiFi: HomeNetwork                              0 B  Package
+
+-------------------------------------------------------------------------------
+capture
+-------------------------------------------------------------------------------
+
+  Captures data from the source machine for migration.
+
+  USAGE:
+    zim capture --output <path> [options]
+
+  OPTIONS:
+    --output, -o <path>     Output directory for captured data (required)
+    --tier <tier>           Migration tier [default: auto]
+                            Values: package, regfile, clone, auto
+    --profile <name>        Migration profile name to apply
+    --all                   Select all discovered items
+    --volume <letter>       Volume letter for full clone (e.g., C)
+    --format <format>       Disk image format for clone [default: vhdx]
+                            Values: img, raw, vhdx
+
+  EXAMPLES:
+    zim capture -o D:\migration\source --all
+    zim capture -o D:\migration\source --profile "Standard Office PC"
+    zim capture -o D:\migration\source --tier clone --volume C --format vhdx
+
+  NOTES:
+    - If neither --all nor --profile is specified, all items are selected.
+    - The --tier auto mode uses Package for apps with winget/choco matches,
+      RegistryFile for others.
+    - Clone tier captures the entire volume as a disk image.
+    - A job is automatically created and logged.
+
+-------------------------------------------------------------------------------
+restore
+-------------------------------------------------------------------------------
+
+  Restores captured data to the destination machine.
+
+  USAGE:
+    zim restore --input <path> [options]
+
+  OPTIONS:
+    --input, -i <path>          Input directory containing captured data (required)
+    --user-map <src:dest>       User mapping in source:dest format (repeatable)
+    --create-users              Create destination user accounts if missing
+
+  EXAMPLES:
+    zim restore -i D:\migration\source
+    zim restore -i D:\migration\source --user-map Bill:William
+    zim restore -i D:\migration\source --user-map Bill:William --user-map Admin:Admin --create-users
+
+  NOTES:
+    - User mappings remap file paths and registry entries from the source
+      username to the destination username.
+    - The --create-users flag creates local accounts if they don't exist.
+    - Restore processes Package tier first, then RegistryFile tier.
+
+-------------------------------------------------------------------------------
+status
+-------------------------------------------------------------------------------
+
+  Shows the status of the most recent migration job.
+
+  USAGE:
+    zim status [--json] [--verbose]
+
+  EXAMPLES:
+    zim status                  Show latest job status (table)
+    zim status --json           Show latest job status (JSON)
+
+-------------------------------------------------------------------------------
+profile
+-------------------------------------------------------------------------------
+
+  Manage migration profile templates.
+
+  SUBCOMMANDS:
+
+  profile list [--source <source>]
+    List available migration profiles.
+    --source <source>   Profile source [default: all]
+                        Values: local, nas, all
+
+  profile show <name> [--source <source>]
+    Show details of a migration profile.
+    <name>              Profile name to display
+    --source <source>   Profile source [default: local]
+                        Values: local, nas
+
+  profile save <name> [--description <text>] [--author <text>]
+    Save a new migration profile template.
+    <name>              Profile name
+    --description       Profile description
+    --author            Profile author [default: current username]
+
+  profile delete <name>
+    Delete a local migration profile.
+    <name>              Profile name to delete
+
+  EXAMPLES:
+    zim profile list
+    zim profile list --source nas
+    zim profile list --json
+    zim profile show "Standard Office PC"
+    zim profile show "Standard Office PC" --json
+    zim profile save "Dev Workstation" --description "Developer PC setup" --author "Tech Team"
+    zim profile delete "Old Profile"
+
+-------------------------------------------------------------------------------
+job
+-------------------------------------------------------------------------------
+
+  View and manage migration jobs.
+
+  SUBCOMMANDS:
+
+  job list [--status <status>]
+    List migration jobs.
+    --status <status>   Filter by status [default: all]
+                        Values: pending, inprogress, completed, failed, all
+
+  job show <id>
+    Show details of a migration job.
+    <id>                Job ID to display
+
+  job export <id> [--output <path>]
+    Generate and export a job report.
+    <id>                Job ID to export
+    --output, -o        Output file path [default: {id}-report.json]
+
+  EXAMPLES:
+    zim job list
+    zim job list --status completed
+    zim job list --json
+    zim job show abc123def456
+    zim job show abc123def456 --json
+    zim job export abc123def456
+    zim job export abc123def456 -o report.json
+
+===============================================================================
+EXIT CODES
+===============================================================================
+
+  0     Success
+  1     Error (missing input, operation failed, item not found)
+  2     Partial success (some items failed during migration)
+
+===============================================================================
+CONFIGURATION
+===============================================================================
+
+  The CLI uses the following directory structure relative to the executable:
+
+    {basePath}/
+    ├── data/
+    │   ├── jobs/           Job JSON files ({jobId}.json)
+    │   └── reports/        Report JSON files ({reportId}.json)
+    ├── logs/
+    │   └── zim-{date}.log  Daily log files
+    └── profiles/           Migration profile templates (.json)
+
+  NAS Path:
+    NAS profile paths can be configured in appsettings.json or passed to
+    individual commands. When configured, profile list/show commands can
+    pull shared templates from the organization's NAS share.
+
+  Logging:
+    - All operations are logged to {basePath}/logs/zim-{date}.log
+    - Use --verbose to also output debug logs to stderr
+    - Stdout is kept clean for piping (progress goes to stderr)
+
+===============================================================================
