@@ -1,0 +1,65 @@
+## .NET / Visual Studio
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.rsuser
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+
+## NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/packages/repositories.config
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Publish output
+publish/
+
+## User-specific files
+*.dbmdl
+*.jfm
+*.pfx
+*.publishsettings
+
+## IDE
+.idea/
+*.sln.iml
+.vscode/
+*.swp
+*~
+
+## OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+TestResult.xml
+
+## Coverage
+*.coverage
+*.coveragexml
+coverage/
+
+## Misc
+*.log
+*.tmp
+*.bak
+*.cache
