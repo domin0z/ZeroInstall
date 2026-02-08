@@ -1,0 +1,56 @@
+{
+  "name": "Standard Office PC",
+  "description": "Typical office workstation: Office apps, browser, email, user files, printers, WiFi",
+  "version": "0.1.0",
+  "author": "CCNNY",
+  "created": "2026-02-08T00:00:00Z",
+  "modified": "2026-02-08T00:00:00Z",
+  "items": {
+    "userProfiles": {
+      "enabled": true,
+      "includeAll": true,
+      "folders": ["Documents", "Desktop", "Downloads", "Pictures", "Favorites"]
+    },
+    "applications": {
+      "enabled": true,
+      "preferredTier": "Package",
+      "include": [
+        "Microsoft Office*",
+        "Google Chrome",
+        "Mozilla Firefox",
+        "Microsoft Edge",
+        "Adobe Acrobat*",
+        "7-Zip",
+        "Zoom",
+        "Microsoft Teams"
+      ],
+      "exclude": [
+        "Microsoft OneDrive",
+        "Windows Security"
+      ]
+    },
+    "browserData": {
+      "enabled": true,
+      "browsers": ["Chrome", "Firefox", "Edge"],
+      "includeBookmarks": true,
+      "includeExtensions": true,
+      "includePasswords": false
+    },
+    "systemSettings": {
+      "enabled": true,
+      "wifiProfiles": true,
+      "printers": true,
+      "mappedDrives": true,
+      "environmentVariables": false,
+      "scheduledTasks": false,
+      "credentials": false,
+      "certificates": false,
+      "defaultApps": true
+    }
+  },
+  "transport": {
+    "preferredMethod": "NetworkShare",
+    "nasPath": "",
+    "compression": true
+  }
+}

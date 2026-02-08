@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- CCNNY Brand Colors (https://ccnny.us) -->
+
+    <!-- Primary -->
+    <Color x:Key="PrimaryTealColor">#1088A1</Color>
+    <Color x:Key="PrimaryDarkTealColor">#0E4D6C</Color>
+
+    <!-- Accent -->
+    <Color x:Key="AccentOrangeColor">#F58850</Color>
+
+    <!-- Backgrounds -->
+    <Color x:Key="BackgroundWhiteColor">#FFFFFF</Color>
+    <Color x:Key="SurfaceLightGrayColor">#F5F5F5</Color>
+
+    <!-- Borders -->
+    <Color x:Key="BorderGrayColor">#E8E8E8</Color>
+
+    <!-- Text -->
+    <Color x:Key="TextPrimaryColor">#24282D</Color>
+    <Color x:Key="TextSecondaryColor">#333333</Color>
+
+    <!-- Solid Brushes -->
+    <SolidColorBrush x:Key="PrimaryTealBrush" Color="{StaticResource PrimaryTealColor}" />
+    <SolidColorBrush x:Key="PrimaryDarkTealBrush" Color="{StaticResource PrimaryDarkTealColor}" />
+    <SolidColorBrush x:Key="AccentOrangeBrush" Color="{StaticResource AccentOrangeColor}" />
+    <SolidColorBrush x:Key="BackgroundWhiteBrush" Color="{StaticResource BackgroundWhiteColor}" />
+    <SolidColorBrush x:Key="SurfaceLightGrayBrush" Color="{StaticResource SurfaceLightGrayColor}" />
+    <SolidColorBrush x:Key="BorderGrayBrush" Color="{StaticResource BorderGrayColor}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+
+    <!-- Gradient Brushes -->
+    <LinearGradientBrush x:Key="PrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource PrimaryTealColor}" Offset="0" />
+        <GradientStop Color="{StaticResource PrimaryDarkTealColor}" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- Hover / Interactive States -->
+    <SolidColorBrush x:Key="AccentOrangeHoverBrush" Color="#E07540" />
+    <SolidColorBrush x:Key="PrimaryTealHoverBrush" Color="#0D7A91" />
+
+</ResourceDictionary>

@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ZeroInstall Migration Profile",
+  "description": "Defines a reusable migration template for technicians",
+  "type": "object",
+  "required": ["name", "version", "items"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable profile name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of what this profile is designed for"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Profile schema version (semver)"
+    },
+    "author": {
+      "type": "string",
+      "description": "Technician or team who created this profile"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modified": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "object",
+      "description": "What to include/exclude in the migration",
+      "properties": {
+        "userProfiles": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "includeAll": { "type": "boolean", "default": true },
+            "folders": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["Documents", "Desktop", "Downloads", "Pictures", "Music", "Videos", "Favorites", "AppData"]
+              }
+            }
+          }
+        },
+        "applications": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "preferredTier": {
+              "type": "string",
+              "enum": ["Package", "RegistryFile", "FullClone"],
+              "default": "Package"
+            },
+            "include": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "App names or patterns to always include"
+            },
+            "exclude": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "App names or patterns to always exclude"
+            }
+          }
+        },
+        "browserData": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "browsers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["Chrome", "Firefox", "Edge"]
+              }
+            },
+            "includeBookmarks": { "type": "boolean", "default": true },
+            "includeExtensions": { "type": "boolean", "default": true },
+            "includePasswords": { "type": "boolean", "default": false }
+          }
+        },
+        "systemSettings": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "wifiProfiles": { "type": "boolean", "default": true },
+            "printers": { "type": "boolean", "default": true },
+            "mappedDrives": { "type": "boolean", "default": true },
+            "environmentVariables": { "type": "boolean", "default": false },
+            "scheduledTasks": { "type": "boolean", "default": false },
+            "credentials": { "type": "boolean", "default": false },
+            "certificates": { "type": "boolean", "default": false },
+            "defaultApps": { "type": "boolean", "default": true }
+          }
+        }
+      }
+    },
+    "transport": {
+      "type": "object",
+      "description": "Preferred transport settings",
+      "properties": {
+        "preferredMethod": {
+          "type": "string",
+          "enum": ["ExternalStorage", "NetworkShare", "DirectWiFi"],
+          "default": "NetworkShare"
+        },
+        "nasPath": {
+          "type": "string",
+          "description": "Default UNC path for network share transport"
+        },
+        "compression": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  }
+}
