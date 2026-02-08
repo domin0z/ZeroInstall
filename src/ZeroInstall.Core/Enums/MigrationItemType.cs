@@ -9,5 +9,6 @@ public enum MigrationItemType
     UserProfile,
     SystemSetting,
     FileGroup,
-    BrowserData
+    BrowserData,
+    EmailData
 }

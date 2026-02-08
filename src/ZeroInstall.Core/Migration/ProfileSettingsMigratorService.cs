@@ -16,11 +16,13 @@ public class ProfileSettingsMigratorService
     private const string ProfilesSubDir = "profiles";
     private const string BrowserDataSubDir = "browser-data";
     private const string SystemSettingsSubDir = "system-settings";
+    private const string EmailDataSubDir = "email-data";
 
     private readonly IUserAccountManager _accountManager;
     private readonly ProfileTransferService _profileTransfer;
     private readonly IUserPathRemapper _pathRemapper;
     private readonly BrowserDataService _browserData;
+    private readonly EmailDataService _emailData;
     private readonly SystemSettingsReplayService _systemSettings;
     private readonly ILogger<ProfileSettingsMigratorService> _logger;
 
@@ -29,6 +31,7 @@ public class ProfileSettingsMigratorService
         ProfileTransferService profileTransfer,
         IUserPathRemapper pathRemapper,
         BrowserDataService browserData,
+        EmailDataService emailData,
         SystemSettingsReplayService systemSettings,
         ILogger<ProfileSettingsMigratorService> logger)
     {
@@ -36,6 +39,7 @@ public class ProfileSettingsMigratorService
         _profileTransfer = profileTransfer;
         _pathRemapper = pathRemapper;
         _browserData = browserData;
+        _emailData = emailData;
         _systemSettings = systemSettings;
         _logger = logger;
     }
@@ -113,6 +117,11 @@ public class ProfileSettingsMigratorService
         var browserDir = Path.Combine(outputPath, BrowserDataSubDir);
         await _browserData.CaptureAsync(items, browserDir, statusProgress, ct);
 
+        // Capture email data
+        statusProgress?.Report("Capturing email data...");
+        var emailDir = Path.Combine(outputPath, EmailDataSubDir);
+        await _emailData.CaptureAsync(items, emailDir, statusProgress, ct);
+
         // Capture system settings
         statusProgress?.Report("Capturing system settings...");
         var settingsDir = Path.Combine(outputPath, SystemSettingsSubDir);
@@ -124,6 +133,7 @@ public class ProfileSettingsMigratorService
             CapturedUtc = DateTime.UtcNow,
             HasProfiles = Directory.Exists(profilesDir),
             HasBrowserData = Directory.Exists(browserDir),
+            HasEmailData = Directory.Exists(emailDir),
             HasSystemSettings = Directory.Exists(settingsDir)
         };
 
@@ -166,7 +176,15 @@ public class ProfileSettingsMigratorService
             await _browserData.RestoreAsync(browserDir, readOnlyMappings, statusProgress, ct);
         }
 
-        // Step 4: Remap user paths (per mapping)
+        // Step 4: Restore email data
+        var emailDir = Path.Combine(inputPath, EmailDataSubDir);
+        if (Directory.Exists(emailDir))
+        {
+            statusProgress?.Report("Restoring email data...");
+            await _emailData.RestoreAsync(emailDir, readOnlyMappings, statusProgress, ct);
+        }
+
+        // Step 5: Remap user paths (per mapping)
         foreach (var mapping in userMappings)
         {
             if (!mapping.RequiresPathRemapping) continue;
@@ -176,7 +194,7 @@ public class ProfileSettingsMigratorService
                 mapping, mapping.DestinationProfilePath, statusProgress, ct);
         }
 
-        // Step 5: Restore system settings (after path remapping)
+        // Step 6: Restore system settings (after path remapping)
         var settingsDir = Path.Combine(inputPath, SystemSettingsSubDir);
         if (Directory.Exists(settingsDir))
         {
@@ -201,5 +219,6 @@ public class ProfileSettingsManifest
     public DateTime CapturedUtc { get; set; }
     public bool HasProfiles { get; set; }
     public bool HasBrowserData { get; set; }
+    public bool HasEmailData { get; set; }
     public bool HasSystemSettings { get; set; }
 }

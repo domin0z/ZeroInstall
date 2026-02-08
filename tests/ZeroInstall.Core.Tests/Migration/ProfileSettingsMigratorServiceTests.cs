@@ -14,6 +14,7 @@ public class ProfileSettingsMigratorServiceTests : IDisposable
     private readonly ProfileTransferService _profileTransfer;
     private readonly IUserPathRemapper _pathRemapper = Substitute.For<IUserPathRemapper>();
     private readonly BrowserDataService _browserData;
+    private readonly EmailDataService _emailData;
     private readonly SystemSettingsReplayService _systemSettings;
     private readonly ProfileSettingsMigratorService _service;
     private readonly string _tempDir;
@@ -31,13 +32,15 @@ public class ProfileSettingsMigratorServiceTests : IDisposable
             fileSystem, processRunner, NullLogger<ProfileTransferService>.Instance);
         _browserData = new BrowserDataService(
             fileSystem, processRunner, NullLogger<BrowserDataService>.Instance);
+        _emailData = new EmailDataService(
+            fileSystem, processRunner, NullLogger<EmailDataService>.Instance);
         _systemSettings = new SystemSettingsReplayService(
             processRunner, registry, fileSystem,
             NullLogger<SystemSettingsReplayService>.Instance);
 
         _service = new ProfileSettingsMigratorService(
             _accountManager, _profileTransfer, _pathRemapper,
-            _browserData, _systemSettings,
+            _browserData, _emailData, _systemSettings,
             NullLogger<ProfileSettingsMigratorService>.Instance);
     }
 
