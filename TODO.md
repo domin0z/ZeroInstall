@@ -130,24 +130,31 @@
   - [x] DiscoveryViewModel — ISessionState + INavigationService, Proceed→CaptureConfig with item save
 - [x] Write tests (60 new, 525 total)
 
-## Phase 10: Transfer Agent
-- [ ] **Agent Core:**
-  - [ ] TCP listener for incoming transfer connections
-  - [ ] mDNS/DNS-SD service advertisement and discovery
-  - [ ] Authentication handshake (simple shared key or challenge)
-  - [ ] File receive pipeline (stream to disk with progress)
-  - [ ] File send pipeline (disk to stream with progress)
-- [ ] **Portable Mode:**
-  - [ ] Single exe, no install needed
-  - [ ] Console UI showing connection status and transfer progress
-  - [ ] Auto-exit when transfer completes
-  - [ ] Command-line args: role (source/dest), port, key
-- [ ] **Service Mode:**
-  - [ ] Windows Service wrapper (`IHostedService`)
-  - [ ] Install/uninstall via CLI (`ZeroInstall.Agent --install` / `--uninstall`)
-  - [ ] Auto-start on boot
-  - [ ] System tray icon for status (optional)
-- [ ] Write integration tests for agent-to-agent communication
+## Phase 10: Transfer Agent (`zim-agent`) ✅
+- [x] **Models:**
+  - [x] AgentRole enum (Source/Destination)
+  - [x] AgentOptions (role, port, shared key, mode, directory, peer address)
+  - [x] AgentHandshake / AgentHandshakeResponse (JSON-serialized auth protocol)
+- [x] **Agent Protocol:**
+  - [x] AgentProtocol — sentinel-path-based handshake/completion over ITransport.SendAsync/ReceiveAsync
+  - [x] Shared-key authentication (plaintext, local-network use)
+- [x] **Agent Core:**
+  - [x] IAgentTransferService / AgentTransferService — full source + destination transfer orchestration
+  - [x] Source flow: UDP discovery responder, TCP listen, authenticate, enumerate files, build manifest, send all files with checksums
+  - [x] Destination flow: discover/connect peer, authenticate, receive manifest, receive files by count, write to disk preserving relative paths
+  - [x] ProgressChanged / StatusChanged events for UI
+- [x] **Portable Mode:**
+  - [x] AgentPortableService (IHostedService) — single transfer, then StopApplication()
+  - [x] AgentConsoleUI — header banner, progress bar with speed/ETA, transfer summary
+  - [x] Command-line args: `--role`, `--port`, `--key`, `--mode`, `--dir`, `--peer`
+- [x] **Service Mode:**
+  - [x] AgentWindowsService (BackgroundService) — loop: listen → authenticate → transfer → repeat
+  - [x] ServiceInstaller — `sc.exe create/delete/query` via IProcessRunner
+  - [x] `zim-agent install --key --port` / `zim-agent uninstall` subcommands
+- [x] **Hosting:**
+  - [x] AgentHost — DI host builder with Serilog, portable vs service mode switching, UseWindowsService()
+  - [x] Program.cs — System.CommandLine 2.0.0 entry point with root command + install/uninstall subcommands
+- [x] Write tests (47 new, 572 total) — models, protocol loopback, full transfer integration, service installer, console UI, host builder
 
 ## Phase 11: WinPE Restore Environment
 - [ ] **WinPE ISO Builder:**
