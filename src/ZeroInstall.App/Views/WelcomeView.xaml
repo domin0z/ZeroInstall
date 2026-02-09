@@ -1,0 +1,80 @@
+<UserControl x:Class="ZeroInstall.App.Views.WelcomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <Grid Background="{StaticResource SurfaceLightGrayBrush}">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="700">
+
+            <!-- Title -->
+            <TextBlock Text="Which computer is this?"
+                       Style="{StaticResource HeaderText}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8" />
+            <TextBlock Text="Select the role of this machine in the migration."
+                       Style="{StaticResource BodyText}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,32" />
+
+            <!-- Two cards side by side -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="24" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Source Card -->
+                <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="SOURCE"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryTealBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,4" />
+                        <TextBlock Text="The Old Computer"
+                                   Style="{StaticResource SubheaderText}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,12" />
+                        <TextBlock Text="This is the computer you're migrating FROM. We'll scan it to discover applications, settings, and files."
+                                   Style="{StaticResource BodyText}"
+                                   TextAlignment="Center"
+                                   Margin="0,0,0,20" />
+                        <Button Content="Select Source"
+                                Style="{StaticResource AccentButton}"
+                                Command="{Binding SelectSourceCommand}"
+                                HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Destination Card -->
+                <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="DESTINATION"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryDarkTealBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,4" />
+                        <TextBlock Text="The New Computer"
+                                   Style="{StaticResource SubheaderText}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,12" />
+                        <TextBlock Text="This is the computer you're migrating TO. We'll restore applications, settings, and files from the source capture."
+                                   Style="{StaticResource BodyText}"
+                                   TextAlignment="Center"
+                                   Margin="0,0,0,20" />
+                        <Button Content="Select Destination"
+                                Style="{StaticResource AccentButton}"
+                                Command="{Binding SelectDestinationCommand}"
+                                HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>
