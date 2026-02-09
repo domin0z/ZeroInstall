@@ -7,12 +7,14 @@ namespace ZeroInstall.App.Tests.ViewModels;
 public class WelcomeViewModelTests
 {
     private readonly INavigationService _navService;
+    private readonly ISessionState _session;
     private readonly WelcomeViewModel _sut;
 
     public WelcomeViewModelTests()
     {
         _navService = Substitute.For<INavigationService>();
-        _sut = new WelcomeViewModel(_navService);
+        _session = Substitute.For<ISessionState>();
+        _sut = new WelcomeViewModel(_navService, _session);
     }
 
     [Fact]
@@ -43,5 +45,29 @@ public class WelcomeViewModelTests
         _sut.SelectDestinationCommand.Execute(null);
 
         _sut.SelectedRole.Should().Be(MachineRole.Destination);
+    }
+
+    [Fact]
+    public void SelectDestinationCommand_NavigatesToRestoreConfigViewModel()
+    {
+        _sut.SelectDestinationCommand.Execute(null);
+
+        _navService.Received(1).NavigateTo<RestoreConfigViewModel>();
+    }
+
+    [Fact]
+    public void SelectSourceCommand_SetsSessionRole()
+    {
+        _sut.SelectSourceCommand.Execute(null);
+
+        _session.Received(1).Role = MachineRole.Source;
+    }
+
+    [Fact]
+    public void SelectDestinationCommand_SetsSessionRole()
+    {
+        _sut.SelectDestinationCommand.Execute(null);
+
+        _session.Received(1).Role = MachineRole.Destination;
     }
 }

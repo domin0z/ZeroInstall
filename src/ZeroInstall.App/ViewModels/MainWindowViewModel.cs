@@ -26,7 +26,7 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _canGoForward;
 
-    public IReadOnlyList<string> StepNames { get; } = ["Welcome", "Discover", "Migrate"];
+    public IReadOnlyList<string> StepNames { get; } = ["Welcome", "Discover", "Configure", "Migrate", "Summary"];
 
     public MainWindowViewModel(INavigationService navigationService)
     {
@@ -57,6 +57,9 @@ public partial class MainWindowViewModel : ObservableObject
         {
             WelcomeViewModel => 0,
             DiscoveryViewModel => 1,
+            CaptureConfigViewModel or RestoreConfigViewModel => 2,
+            MigrationProgressViewModel => 3,
+            JobSummaryViewModel => 4,
             _ => CurrentStepIndex
         };
     }

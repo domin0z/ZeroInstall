@@ -22,10 +22,10 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public void InitialState_StepNamesContainsThreeSteps()
+    public void InitialState_StepNamesContainsFiveSteps()
     {
-        _sut.StepNames.Should().HaveCount(3);
-        _sut.StepNames.Should().ContainInOrder("Welcome", "Discover", "Migrate");
+        _sut.StepNames.Should().HaveCount(5);
+        _sut.StepNames.Should().ContainInOrder("Welcome", "Discover", "Configure", "Migrate", "Summary");
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class MainWindowViewModelTests
     [Fact]
     public void CurrentViewModelChanged_UpdatesCurrentViewModel()
     {
-        var welcomeVm = Substitute.For<WelcomeViewModel>(Substitute.For<INavigationService>());
+        var welcomeVm = new WelcomeViewModel(Substitute.For<INavigationService>(), Substitute.For<ISessionState>());
 
         // Trigger the event
         _navService.CurrentViewModelChanged += Raise.Event<Action<ViewModelBase>>(welcomeVm);

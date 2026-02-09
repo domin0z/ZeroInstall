@@ -50,6 +50,12 @@ internal static class AppHost
                 services.AddSingleton<IProfileManager>(sp =>
                     new JsonProfileManager(profilesPath, null, sp.GetRequiredService<ILogger<JsonProfileManager>>()));
 
+                // Session state (singleton — shared across views)
+                services.AddSingleton<ISessionState, SessionState>();
+
+                // Migration coordinator
+                services.AddTransient<IMigrationCoordinator, MigrationCoordinator>();
+
                 // Navigation
                 services.AddSingleton<INavigationService, NavigationService>();
 
@@ -57,6 +63,10 @@ internal static class AppHost
                 services.AddTransient<MainWindowViewModel>();
                 services.AddTransient<WelcomeViewModel>();
                 services.AddTransient<DiscoveryViewModel>();
+                services.AddTransient<CaptureConfigViewModel>();
+                services.AddTransient<RestoreConfigViewModel>();
+                services.AddTransient<MigrationProgressViewModel>();
+                services.AddTransient<JobSummaryViewModel>();
 
                 // Window
                 services.AddSingleton<MainWindow>();

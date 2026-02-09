@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ZeroInstall.App.Services;
 using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.App.ViewModels;
@@ -11,6 +12,8 @@ namespace ZeroInstall.App.ViewModels;
 public partial class DiscoveryViewModel : ViewModelBase
 {
     private readonly IDiscoveryService _discoveryService;
+    private readonly ISessionState _session;
+    private readonly INavigationService _navigationService;
 
     public override string Title => "Discover";
 
@@ -31,9 +34,14 @@ public partial class DiscoveryViewModel : ViewModelBase
     [ObservableProperty]
     private string _selectedSizeFormatted = "0 B";
 
-    public DiscoveryViewModel(IDiscoveryService discoveryService)
+    public DiscoveryViewModel(
+        IDiscoveryService discoveryService,
+        ISessionState session,
+        INavigationService navigationService)
     {
         _discoveryService = discoveryService;
+        _session = session;
+        _navigationService = navigationService;
     }
 
     public override async Task OnNavigatedTo()
@@ -93,7 +101,11 @@ public partial class DiscoveryViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanProceed))]
     private void Proceed()
     {
-        // Future: navigate to capture configuration
+        _session.SelectedItems = Items
+            .Where(i => i.IsSelected)
+            .Select(i => i.Model)
+            .ToList();
+        _navigationService.NavigateTo<CaptureConfigViewModel>();
     }
 
     private bool CanProceed() => SelectedCount > 0;

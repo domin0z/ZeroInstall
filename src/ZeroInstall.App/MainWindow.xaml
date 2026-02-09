@@ -23,6 +23,18 @@
         <DataTemplate DataType="{x:Type vm:DiscoveryViewModel}">
             <views:DiscoveryView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CaptureConfigViewModel}">
+            <views:CaptureConfigView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RestoreConfigViewModel}">
+            <views:RestoreConfigView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:MigrationProgressViewModel}">
+            <views:MigrationProgressView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:JobSummaryViewModel}">
+            <views:JobSummaryView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

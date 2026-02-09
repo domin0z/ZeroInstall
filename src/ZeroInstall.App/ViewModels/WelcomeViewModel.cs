@@ -9,6 +9,7 @@ namespace ZeroInstall.App.ViewModels;
 public partial class WelcomeViewModel : ViewModelBase
 {
     private readonly INavigationService _navigationService;
+    private readonly ISessionState _session;
 
     public override string Title => "Welcome";
 
@@ -17,15 +18,17 @@ public partial class WelcomeViewModel : ViewModelBase
     /// </summary>
     public MachineRole? SelectedRole { get; private set; }
 
-    public WelcomeViewModel(INavigationService navigationService)
+    public WelcomeViewModel(INavigationService navigationService, ISessionState session)
     {
         _navigationService = navigationService;
+        _session = session;
     }
 
     [RelayCommand]
     private void SelectSource()
     {
         SelectedRole = MachineRole.Source;
+        _session.Role = MachineRole.Source;
         _navigationService.NavigateTo<DiscoveryViewModel>();
     }
 
@@ -33,7 +36,8 @@ public partial class WelcomeViewModel : ViewModelBase
     private void SelectDestination()
     {
         SelectedRole = MachineRole.Destination;
-        // Future: navigate to restore/destination view
+        _session.Role = MachineRole.Destination;
+        _navigationService.NavigateTo<RestoreConfigViewModel>();
     }
 }
 

@@ -1,0 +1,133 @@
+<UserControl x:Class="ZeroInstall.App.Views.CaptureConfigView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <Grid Background="{StaticResource SurfaceLightGrayBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource BackgroundWhiteBrush}"
+                BorderBrush="{StaticResource BorderGrayBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <TextBlock Text="Configure Capture"
+                       Style="{StaticResource SubheaderText}"
+                       FontSize="18" />
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
+            <StackPanel MaxWidth="600" HorizontalAlignment="Left">
+
+                <!-- Output Location -->
+                <TextBlock Text="Output Location"
+                           Style="{StaticResource SubheaderText}"
+                           Margin="0,0,0,8" />
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0"
+                             Text="{Binding OutputPath, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="8,6"
+                             FontSize="13"
+                             VerticalContentAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Content="Browse"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding BrowseOutputCommand}"
+                            Padding="12,6"
+                            Margin="8,0,0,0" />
+                </Grid>
+
+                <!-- Transport Method -->
+                <TextBlock Text="Transport Method"
+                           Style="{StaticResource SubheaderText}"
+                           Margin="0,0,0,8" />
+                <ComboBox ItemsSource="{Binding TransportMethods}"
+                          SelectedItem="{Binding SelectedTransport}"
+                          Padding="8,6"
+                          FontSize="13"
+                          Margin="0,0,0,24" />
+
+                <!-- Summary -->
+                <TextBlock Text="Summary"
+                           Style="{StaticResource SubheaderText}"
+                           Margin="0,0,0,12" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <Border Background="{StaticResource SurfaceLightGrayBrush}"
+                            BorderBrush="{StaticResource BorderGrayBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="16,10" Margin="0,0,12,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding PackageItemCount}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="{StaticResource PrimaryTealBrush}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Package"
+                                       FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource SurfaceLightGrayBrush}"
+                            BorderBrush="{StaticResource BorderGrayBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="16,10" Margin="0,0,12,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding RegFileItemCount}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="{StaticResource PrimaryTealBrush}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Registry"
+                                       FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource SurfaceLightGrayBrush}"
+                            BorderBrush="{StaticResource BorderGrayBrush}"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="16,10">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding ProfileItemCount}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="{StaticResource PrimaryTealBrush}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Profile"
+                                       FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Margin="0,0,0,8">
+                    <Run Text="Total: " />
+                    <Run Text="{Binding TotalSizeFormatted, Mode=OneWay}" FontWeight="SemiBold" />
+                    <Run Text=" estimated" />
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Bottom Bar -->
+        <Border Grid.Row="2"
+                Background="{StaticResource BackgroundWhiteBrush}"
+                BorderBrush="{StaticResource BorderGrayBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <Button Content="Start Capture"
+                    Style="{StaticResource AccentButton}"
+                    Command="{Binding StartCaptureCommand}"
+                    HorizontalAlignment="Right"
+                    Padding="24,8" />
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,4 +1,5 @@
 using NSubstitute;
+using ZeroInstall.App.Services;
 using ZeroInstall.App.ViewModels;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
@@ -9,12 +10,16 @@ namespace ZeroInstall.App.Tests.ViewModels;
 public class DiscoveryViewModelTests
 {
     private readonly IDiscoveryService _discoveryService;
+    private readonly ISessionState _session;
+    private readonly INavigationService _navService;
     private readonly DiscoveryViewModel _sut;
 
     public DiscoveryViewModelTests()
     {
         _discoveryService = Substitute.For<IDiscoveryService>();
-        _sut = new DiscoveryViewModel(_discoveryService);
+        _session = Substitute.For<ISessionState>();
+        _navService = Substitute.For<INavigationService>();
+        _sut = new DiscoveryViewModel(_discoveryService, _session, _navService);
     }
 
     [Fact]

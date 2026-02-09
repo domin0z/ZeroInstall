@@ -1,0 +1,162 @@
+<UserControl x:Class="ZeroInstall.App.Views.JobSummaryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:ZeroInstall.App.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <converters:MigrationItemStatusToIconConverter x:Key="StatusToIcon" />
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource SurfaceLightGrayBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource BackgroundWhiteBrush}"
+                BorderBrush="{StaticResource BorderGrayBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <StackPanel>
+                <TextBlock Text="Migration Complete"
+                           Style="{StaticResource SubheaderText}"
+                           FontSize="18" />
+                <TextBlock Text="{Binding OverallStatus}"
+                           Style="{StaticResource BodyText}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="0,4,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Summary Cards -->
+        <Border Grid.Row="1"
+                Background="{StaticResource BackgroundWhiteBrush}"
+                BorderBrush="{StaticResource BorderGrayBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,16">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <!-- Success -->
+                    <Border Background="#E8F5E9" BorderBrush="#A5D6A7"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="16,10" Margin="0,0,12,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding SucceededCount}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="#2E7D32"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Success"
+                                       FontSize="11" Foreground="#2E7D32"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <!-- Failed -->
+                    <Border Background="#FFEBEE" BorderBrush="#EF9A9A"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="16,10" Margin="0,0,12,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding FailedCount}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="#C62828"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Failed"
+                                       FontSize="11" Foreground="#C62828"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <!-- Warning -->
+                    <Border Background="#FFF8E1" BorderBrush="#FFE082"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="16,10" Margin="0,0,12,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding WarningCount}"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="#F57F17"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Warning"
+                                       FontSize="11" Foreground="#F57F17"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock>
+                    <Run Text="Duration: " />
+                    <Run Text="{Binding DurationFormatted, Mode=OneWay}" FontWeight="SemiBold" />
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <!-- Item Results List -->
+        <ListView Grid.Row="2"
+                  ItemsSource="{Binding ItemResults}"
+                  BorderThickness="0"
+                  Background="Transparent"
+                  Margin="12,8"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="4,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="24" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding Status, Converter={StaticResource StatusToIcon}}"
+                                   FontSize="14"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding DisplayName}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding StatusMessage}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="12,0,0,0" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <!-- Bottom Bar -->
+        <Border Grid.Row="3"
+                Background="{StaticResource BackgroundWhiteBrush}"
+                BorderBrush="{StaticResource BorderGrayBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="1"
+                        Content="Export Report"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ExportReportCommand}"
+                        Padding="16,8"
+                        Margin="0,0,8,0" />
+                <Button Grid.Column="2"
+                        Content="New Migration"
+                        Style="{StaticResource AccentButton}"
+                        Command="{Binding NewMigrationCommand}"
+                        Padding="16,8" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
