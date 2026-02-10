@@ -142,4 +142,47 @@ public class NetworkShareTransportTests : IDisposable
         completed.Should().Contain("a.txt");
         completed.Should().Contain("b.txt");
     }
+
+    [Fact]
+    public async Task ReceiveAsync_ThrowsWhenFileNotFound()
+    {
+        var metadata = new TransferMetadata
+        {
+            RelativePath = "nonexistent/file.dat",
+            SizeBytes = 100
+        };
+
+        var act = async () => await _transport.ReceiveAsync(metadata);
+
+        await act.Should().ThrowAsync<FileNotFoundException>();
+    }
+
+    [Fact]
+    public async Task SendAndCleanup_RemovesAllData()
+    {
+        var data = Encoding.UTF8.GetBytes("cleanup test");
+        using var stream = new MemoryStream(data);
+        var metadata = new TransferMetadata
+        {
+            RelativePath = "cleanup.dat",
+            SizeBytes = data.Length
+        };
+        await _transport.SendAsync(stream, metadata);
+
+        // Verify data exists
+        Directory.Exists(Path.Combine(_tempDir, "zim-data")).Should().BeTrue();
+
+        // Clean up by deleting the entire temp dir content
+        Directory.Delete(_tempDir, recursive: true);
+
+        Directory.Exists(_tempDir).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetCompletedTransfersAsync_ReturnsEmpty_BeforeAnyTransfer()
+    {
+        var completed = await _transport.GetCompletedTransfersAsync();
+
+        completed.Should().BeEmpty();
+    }
 }

@@ -170,6 +170,59 @@ public class JsonProfileManagerTests : IDisposable
         JsonProfileManager.SanitizeFileName("normal-name").Should().Be("normal-name");
     }
 
+    [Fact]
+    public async Task LoadLocalProfileAsync_FindsByNameInsideFile()
+    {
+        // Save a profile whose Name contains characters that get sanitized differently
+        var profile = CreateTestProfile("Fancy Name!");
+        await _manager.SaveLocalProfileAsync(profile);
+
+        // The filename will be "Fancy-Name.json" but the profile name is "Fancy Name!"
+        // Loading by exact name should exercise FindProfileByNameAsync fallback
+        var loaded = await _manager.LoadLocalProfileAsync("Fancy Name!");
+
+        loaded.Should().NotBeNull();
+        loaded!.Name.Should().Be("Fancy Name!");
+    }
+
+    [Fact]
+    public async Task SaveLocalProfileAsync_UpdatesModifiedUtc()
+    {
+        var profile = CreateTestProfile("TimestampTest");
+        var before = DateTime.UtcNow.AddSeconds(-1);
+
+        await _manager.SaveLocalProfileAsync(profile);
+
+        profile.ModifiedUtc.Should().BeAfter(before);
+        profile.ModifiedUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public async Task ListLocalProfilesAsync_SkipsMalformedJsonFiles()
+    {
+        await _manager.SaveLocalProfileAsync(CreateTestProfile("ValidProfile"));
+
+        // Write a malformed JSON file directly
+        await File.WriteAllTextAsync(Path.Combine(_localPath, "bad-profile.json"), "not json {{{");
+
+        var profiles = await _manager.ListLocalProfilesAsync();
+
+        profiles.Should().HaveCount(1);
+        profiles[0].Name.Should().Be("ValidProfile");
+    }
+
+    [Fact]
+    public async Task ListNasProfilesAsync_NonExistentDirectory_ReturnsEmpty()
+    {
+        var nonExistentNas = Path.Combine(_tempDir, "nonexistent-nas-path");
+        var logger = Substitute.For<ILogger<JsonProfileManager>>();
+        var manager = new JsonProfileManager(_localPath, nonExistentNas, logger);
+
+        var profiles = await manager.ListNasProfilesAsync();
+
+        profiles.Should().BeEmpty();
+    }
+
     private static MigrationProfile CreateTestProfile(string name) => new()
     {
         Name = name,

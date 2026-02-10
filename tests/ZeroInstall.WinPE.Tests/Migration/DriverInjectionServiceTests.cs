@@ -160,4 +160,45 @@ public class DriverInjectionServiceTests
 
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public void ParseDismOutput_InstallingLinesOnly_CountsCorrectly()
+    {
+        var output = """
+            Installing 1 of 3 - oem1.inf
+            Installing 2 of 3 - oem2.inf
+            Installing 3 of 3 - oem3.inf
+            The operation completed successfully.
+            """;
+
+        var result = DriverInjectionService.ParseDismOutput(output);
+
+        result.AddedCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task InjectDriversAsync_FailedProcess_EmptyStderr_UsesExitCodeMessage()
+    {
+        _processRunner.RunAsync("DISM.exe", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult
+            {
+                ExitCode = 87,
+                StandardOutput = "",
+                StandardError = ""
+            });
+
+        var result = await _service.InjectDriversAsync(@"D:\", @"E:\Drivers");
+
+        result.Errors.Should().Contain(e => e.Contains("DISM exited with code 87"));
+    }
+
+    [Fact]
+    public void ParseDismOutput_FailedKeyword_CapturedInErrors()
+    {
+        var output = "The driver package failed to install.\r\nSome other line";
+
+        var result = DriverInjectionService.ParseDismOutput(output);
+
+        result.Errors.Should().Contain(e => e.Contains("failed"));
+    }
 }

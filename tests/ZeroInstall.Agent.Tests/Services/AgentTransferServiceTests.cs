@@ -343,6 +343,95 @@ public class AgentTransferServiceTests : IDisposable
         sourceStatuses.Should().Contain(s => s.Contains("Connected to"));
     }
 
+    [Fact]
+    public async Task FullTransfer_LargeFile_OverLoopback()
+    {
+        // Create a 50KB file with random content
+        var content = new byte[50 * 1024];
+        Random.Shared.NextBytes(content);
+        var filePath = Path.Combine(_sourceDir, "large.bin");
+        await File.WriteAllBytesAsync(filePath, content);
+
+        var port = GetFreePort();
+        var sourceOptions = new AgentOptions
+        {
+            Role = AgentRole.Source,
+            Port = port,
+            SharedKey = "large-key",
+            DirectoryPath = _sourceDir
+        };
+        var destOptions = new AgentOptions
+        {
+            Role = AgentRole.Destination,
+            Port = port,
+            SharedKey = "large-key",
+            DirectoryPath = _destDir,
+            PeerAddress = "127.0.0.1"
+        };
+
+        var sourceService = new AgentTransferService(sourceOptions, NullLogger<AgentTransferService>.Instance);
+        var destService = new AgentTransferService(destOptions, NullLogger<AgentTransferService>.Instance);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+        var sourceTask = sourceService.RunAsSourceAsync(cts.Token);
+        await Task.Delay(200);
+        var destTask = destService.RunAsDestinationAsync(cts.Token);
+
+        await Task.WhenAll(sourceTask, destTask);
+
+        var destFile = Path.Combine(_destDir, "large.bin");
+        File.Exists(destFile).Should().BeTrue();
+        var destContent = await File.ReadAllBytesAsync(destFile);
+        destContent.Length.Should().Be(content.Length);
+        destContent.Should().BeEquivalentTo(content);
+    }
+
+    [Fact]
+    public async Task FullTransfer_SourceProgressEvents_FireForEachFile()
+    {
+        // Create 3 files
+        File.WriteAllText(Path.Combine(_sourceDir, "a.txt"), "aaa");
+        File.WriteAllText(Path.Combine(_sourceDir, "b.txt"), "bbb");
+        File.WriteAllText(Path.Combine(_sourceDir, "c.txt"), "ccc");
+
+        var port = GetFreePort();
+        var sourceOptions = new AgentOptions
+        {
+            Role = AgentRole.Source,
+            Port = port,
+            SharedKey = "progress-key",
+            DirectoryPath = _sourceDir
+        };
+        var destOptions = new AgentOptions
+        {
+            Role = AgentRole.Destination,
+            Port = port,
+            SharedKey = "progress-key",
+            DirectoryPath = _destDir,
+            PeerAddress = "127.0.0.1"
+        };
+
+        var sourceService = new AgentTransferService(sourceOptions, NullLogger<AgentTransferService>.Instance);
+        var destService = new AgentTransferService(destOptions, NullLogger<AgentTransferService>.Instance);
+
+        var sourceProgressEvents = new List<Core.Models.TransferProgress>();
+        sourceService.ProgressChanged += p => sourceProgressEvents.Add(p);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+        var sourceTask = sourceService.RunAsSourceAsync(cts.Token);
+        await Task.Delay(200);
+        var destTask = destService.RunAsDestinationAsync(cts.Token);
+
+        await Task.WhenAll(sourceTask, destTask);
+
+        // Verify that progress events fired and percentages increase
+        sourceProgressEvents.Should().NotBeEmpty();
+        var percentages = sourceProgressEvents.Select(p => p.OverallPercentage).ToList();
+        percentages.Last().Should().BeGreaterThanOrEqualTo(percentages.First());
+    }
+
     private static int GetFreePort()
     {
         using var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);

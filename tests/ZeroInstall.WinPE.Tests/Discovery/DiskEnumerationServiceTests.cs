@@ -185,4 +185,70 @@ public class DiskEnumerationServiceTests
         result[0].DriveLetter.Should().Be("C");
         await _processRunner.Received(1).RunAsync("powershell", Arg.Is<string>(s => s.Contains("Get-Volume")), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task GetDisksAsync_ProcessFailure_ReturnsEmpty()
+    {
+        _processRunner.RunAsync("powershell", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult
+            {
+                ExitCode = 1,
+                StandardError = "Access denied"
+            });
+
+        var result = await _service.GetDisksAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetVolumesAsync_ProcessFailure_ReturnsEmpty()
+    {
+        _processRunner.RunAsync("powershell", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult
+            {
+                ExitCode = 1,
+                StandardError = "Get-Volume failed"
+            });
+
+        var result = await _service.GetVolumesAsync();
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ParseDiskJson_NumericBusTypes_AllMapped()
+    {
+        var json = """
+        [
+            { "Number": 0, "BusType": 3 },
+            { "Number": 1, "BusType": 7 },
+            { "Number": 2, "BusType": 8 },
+            { "Number": 3, "BusType": 9 },
+            { "Number": 4, "BusType": 11 },
+            { "Number": 5, "BusType": 17 }
+        ]
+        """;
+
+        var disks = DiskEnumerationService.ParseDiskJson(json);
+
+        disks.Should().HaveCount(6);
+        disks[0].BusType.Should().Be("ATA");
+        disks[1].BusType.Should().Be("USB");
+        disks[2].BusType.Should().Be("SATA");
+        disks[3].BusType.Should().Be("SAS");
+        disks[4].BusType.Should().Be("RAID");
+        disks[5].BusType.Should().Be("NVMe");
+    }
+
+    [Fact]
+    public void ParseDiskJson_MbrPartitionStyle_ParsedCorrectly()
+    {
+        var json = """{ "Number": 0, "PartitionStyle": 1 }""";
+
+        var disks = DiskEnumerationService.ParseDiskJson(json);
+
+        disks.Should().HaveCount(1);
+        disks[0].PartitionStyle.Should().Be("MBR");
+    }
 }

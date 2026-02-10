@@ -58,6 +58,11 @@ TestResult.xml
 *.coveragexml
 coverage/
 
+## Distribution output
+dist/ZeroInstall/
+dist/_publish_temp/
+dist/*.zip
+
 ## Misc
 *.log
 *.tmp

@@ -189,6 +189,111 @@ public class JsonJobLoggerTests : IDisposable
         created.JobId.Should().NotBeNullOrWhiteSpace();
     }
 
+    [Fact]
+    public async Task ListJobsAsync_SkipsMalformedJsonFiles()
+    {
+        await _logger.CreateJobAsync(CreateTestJob("valid1"));
+
+        // Write a malformed JSON file directly into the jobs directory
+        var badFilePath = Path.Combine(_tempDir, "jobs", "bad.json");
+        await File.WriteAllTextAsync(badFilePath, "{ this is not valid json!!!");
+
+        var jobs = await _logger.ListJobsAsync();
+
+        jobs.Should().HaveCount(1);
+        jobs[0].JobId.Should().Be("valid1");
+    }
+
+    [Fact]
+    public async Task ListJobsAsync_OrderedByCreatedUtcDescending()
+    {
+        var oldest = CreateTestJob("oldest");
+        oldest.CreatedUtc = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var middle = CreateTestJob("middle");
+        middle.CreatedUtc = new DateTime(2024, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var newest = CreateTestJob("newest");
+        newest.CreatedUtc = new DateTime(2024, 12, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        // Create in non-ordered sequence
+        await _logger.CreateJobAsync(middle);
+        await _logger.CreateJobAsync(oldest);
+        await _logger.CreateJobAsync(newest);
+
+        var jobs = await _logger.ListJobsAsync();
+
+        jobs.Should().HaveCount(3);
+        jobs[0].JobId.Should().Be("newest");
+        jobs[1].JobId.Should().Be("middle");
+        jobs[2].JobId.Should().Be("oldest");
+    }
+
+    [Fact]
+    public async Task GenerateReportAsync_CalculatesCompleteSummary()
+    {
+        var job = CreateTestJob();
+        job.Status = JobStatus.Completed;
+        job.StartedUtc = DateTime.UtcNow.AddMinutes(-10);
+        job.CompletedUtc = DateTime.UtcNow;
+        job.Items.Add(new MigrationItem
+        {
+            DisplayName = "CompletedApp",
+            ItemType = MigrationItemType.Application,
+            RecommendedTier = MigrationTier.Package,
+            Status = MigrationItemStatus.Completed,
+            EstimatedSizeBytes = 5000
+        });
+        job.Items.Add(new MigrationItem
+        {
+            DisplayName = "FailedApp",
+            ItemType = MigrationItemType.Application,
+            RecommendedTier = MigrationTier.RegistryFile,
+            Status = MigrationItemStatus.Failed,
+            StatusMessage = "Registry error",
+            EstimatedSizeBytes = 3000
+        });
+        job.Items.Add(new MigrationItem
+        {
+            DisplayName = "SkippedProfile",
+            ItemType = MigrationItemType.UserProfile,
+            RecommendedTier = MigrationTier.Package,
+            Status = MigrationItemStatus.Skipped,
+            EstimatedSizeBytes = 1000
+        });
+        job.Items.Add(new MigrationItem
+        {
+            DisplayName = "WarningBrowser",
+            ItemType = MigrationItemType.BrowserData,
+            RecommendedTier = MigrationTier.Package,
+            Status = MigrationItemStatus.Warning,
+            StatusMessage = "Partial data",
+            EstimatedSizeBytes = 2000
+        });
+        await _logger.CreateJobAsync(job);
+
+        var report = await _logger.GenerateReportAsync(job.JobId);
+
+        report.Summary.TotalItems.Should().Be(4);
+        report.Summary.Completed.Should().Be(1);
+        report.Summary.Failed.Should().Be(1);
+        report.Summary.Skipped.Should().Be(1);
+        report.Summary.Warnings.Should().Be(1);
+        report.Summary.TotalBytesTransferred.Should().Be(5000);
+    }
+
+    [Fact]
+    public async Task PushReportToNasAsync_ReturnsWithoutThrowing()
+    {
+        var report = new JobReport
+        {
+            JobId = "nas-test",
+            FinalStatus = JobStatus.Completed
+        };
+
+        var act = async () => await _logger.PushReportToNasAsync(report);
+
+        await act.Should().NotThrowAsync();
+    }
+
     private static MigrationJob CreateTestJob(string? id = null) => new()
     {
         JobId = id ?? Guid.NewGuid().ToString("N"),
