@@ -40,6 +40,10 @@ public static class ServiceCollectionExtensions
         // Tier 3 — Full disk clone
         services.AddTransient<IDiskCloner, DiskClonerService>();
 
+        // Disk enumeration + driver injection (reusable across CLI/App/WinPE)
+        services.AddTransient<DiskEnumerationService>();
+        services.AddTransient<DriverInjectionService>();
+
         // Profile & settings migration
         services.AddTransient<ProfileTransferService>();
         services.AddTransient<BrowserDataService>();

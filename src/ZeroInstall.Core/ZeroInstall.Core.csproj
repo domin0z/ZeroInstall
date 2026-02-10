@@ -7,6 +7,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="ZeroInstall.Core.Tests" />
     <InternalsVisibleTo Include="ZeroInstall.CLI.Tests" />
+    <InternalsVisibleTo Include="ZeroInstall.WinPE.Tests" />
   </ItemGroup>
 
   <ItemGroup>
