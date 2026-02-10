@@ -7,6 +7,7 @@
 | `ZeroInstall.App.exe` | Main GUI application — start here |
 | `zim.exe` | Command-line interface for scripting |
 | `zim-agent.exe` | Transfer agent for WiFi-based transfers |
+| `zim-backup.exe` | Persistent backup agent for customer PCs |
 | `winpe/` | WinPE restore tool and ISO builder |
 | `profiles/` | Migration profile templates |
 | `docs/` | CLI reference and PXE boot guide |
@@ -60,6 +61,16 @@ For cases where per-app migration is insufficient:
 3. Boot the destination PC from the WinPE USB and restore the image
 
 See `docs\PXE-Boot-Guide.md` for network-based restore without USB.
+
+## Persistent Backup Agent
+
+Install on customer PCs for automatic scheduled backups to the company NAS:
+
+1. Create a config file: `zim-backup status --config backup-config.json`
+2. Edit the config with NAS connection, backup paths, and schedule
+3. Run in tray mode: `zim-backup --config backup-config.json`
+4. Or install as a service: `zim-backup install --config C:\path\to\backup-config.json`
+5. Customer sees tray icon with backup status, can trigger manual backups or request restores
 
 ## Requirements
 

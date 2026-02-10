@@ -138,6 +138,12 @@ $projects = @(
         Path      = "src\ZeroInstall.WinPE\ZeroInstall.WinPE.csproj"
         DestDir   = (Join-Path $distDir "winpe")
         CopyAll   = $false
+    },
+    @{
+        Name      = "ZeroInstall.Backup"
+        Path      = "src\ZeroInstall.Backup\ZeroInstall.Backup.csproj"
+        DestDir   = $distDir
+        CopyAll   = $false
     }
 )
 
