@@ -9,6 +9,7 @@
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:TransportMethodToVisibilityConverter x:Key="TransportToVisibility" />
     </UserControl.Resources>
 
     <Grid Background="{StaticResource SurfaceLightGrayBrush}">
@@ -66,6 +67,116 @@
                            Style="{StaticResource BodyText}"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            Margin="0,0,0,24" />
+
+                <!-- SFTP Config for Restore -->
+                <Border Background="{StaticResource BackgroundWhiteBrush}"
+                        BorderBrush="{StaticResource BorderGrayBrush}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="16,12"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding SelectedTransport, Converter={StaticResource TransportToVisibility}, ConverterParameter=Sftp}">
+                    <StackPanel>
+                        <TextBlock Text="SFTP Settings"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{StaticResource PrimaryTealBrush}"
+                                   Margin="0,0,0,8" />
+
+                        <!-- Host + Port -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Host" FontSize="12" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding SftpHost, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6" FontSize="13" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Port" FontSize="12" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding SftpPort, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6" FontSize="13" Width="80" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Username + Password -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Username" FontSize="12" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding SftpUsername, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6" FontSize="13" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Password" FontSize="12" Margin="0,0,0,4" />
+                                <PasswordBox Padding="8,6" FontSize="13" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Remote Base Path + Connect -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Remote Base Path" FontSize="12" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding SftpRemoteBasePath, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6" FontSize="13" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="Connect &amp; Browse"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding SftpConnectCommand}"
+                                    Padding="12,6" Margin="8,18,0,0"
+                                    VerticalAlignment="Bottom" />
+                        </Grid>
+
+                        <!-- NAS Browser Panel -->
+                        <Border Background="{StaticResource SurfaceLightGrayBrush}"
+                                BorderBrush="{StaticResource BorderGrayBrush}"
+                                BorderThickness="1" CornerRadius="4"
+                                Padding="12,8"
+                                Margin="0,0,0,8"
+                                Visibility="{Binding SftpIsConnected, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SftpCurrentBrowsePath}"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Margin="0,0,0,6" />
+                                <ListBox ItemsSource="{Binding SftpBrowseItems}"
+                                         MaxHeight="150"
+                                         FontSize="12"
+                                         Margin="0,0,0,6">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <Run Text="{Binding Name, Mode=OneWay}" />
+                                                <Run Text="{Binding IsDirectory, Mode=OneWay, StringFormat=' [{0}]'}"
+                                                     Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Encryption Passphrase -->
+                        <TextBlock Text="Encryption Passphrase (for decryption)" FontSize="12" Margin="0,0,0,4" />
+                        <PasswordBox Padding="8,6" FontSize="13" Margin="0,0,0,8" />
+
+                        <!-- Connection Status -->
+                        <TextBlock Text="{Binding SftpConnectionStatus}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
 
                 <!-- User Mapping -->
                 <StackPanel Visibility="{Binding HasValidCapture, Converter={StaticResource BoolToVisibility}}">

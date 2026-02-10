@@ -150,4 +150,136 @@ public class CaptureConfigViewModelTests
         _session.DirectWiFiPort.Should().Be(9999);
         _session.DirectWiFiSharedKey.Should().Be("secret");
     }
+
+    [Fact]
+    public void TransportMethods_IncludesSftp()
+    {
+        _sut.TransportMethods.Should().Contain(TransportMethod.Sftp);
+    }
+
+    [Fact]
+    public void TransportMethods_HasFourEntries()
+    {
+        _sut.TransportMethods.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public void StartCapture_SavesSftpConfigToSession()
+    {
+        _sut.OutputPath = @"E:\out";
+        _sut.SelectedTransport = TransportMethod.Sftp;
+        _sut.SftpHost = "nas.example.com";
+        _sut.SftpPort = 2222;
+        _sut.SftpUsername = "admin";
+        _sut.SftpPassword = "pass123";
+        _sut.SftpPrivateKeyPath = @"C:\keys\id_rsa";
+        _sut.SftpPrivateKeyPassphrase = "keypass";
+        _sut.SftpRemoteBasePath = "/data/backup";
+        _sut.SftpEncryptionPassphrase = "aes-secret";
+        _sut.SftpCompressBeforeUpload = false;
+
+        _sut.StartCaptureCommand.Execute(null);
+
+        _session.SftpHost.Should().Be("nas.example.com");
+        _session.SftpPort.Should().Be(2222);
+        _session.SftpUsername.Should().Be("admin");
+        _session.SftpPassword.Should().Be("pass123");
+        _session.SftpPrivateKeyPath.Should().Be(@"C:\keys\id_rsa");
+        _session.SftpPrivateKeyPassphrase.Should().Be("keypass");
+        _session.SftpRemoteBasePath.Should().Be("/data/backup");
+        _session.SftpEncryptionPassphrase.Should().Be("aes-secret");
+        _session.SftpCompressBeforeUpload.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_RestoresSftpConfigFromSession()
+    {
+        _session.SftpHost = "sftp.test.com";
+        _session.SftpPort = 3333;
+        _session.SftpUsername = "testuser";
+        _session.SftpPassword = "testpass";
+        _session.SftpPrivateKeyPath = @"C:\test\key";
+        _session.SftpPrivateKeyPassphrase = "kp";
+        _session.SftpRemoteBasePath = "/custom";
+        _session.SftpEncryptionPassphrase = "enc";
+        _session.SftpCompressBeforeUpload = false;
+
+        await _sut.OnNavigatedTo();
+
+        _sut.SftpHost.Should().Be("sftp.test.com");
+        _sut.SftpPort.Should().Be(3333);
+        _sut.SftpUsername.Should().Be("testuser");
+        _sut.SftpPassword.Should().Be("testpass");
+        _sut.SftpPrivateKeyPath.Should().Be(@"C:\test\key");
+        _sut.SftpPrivateKeyPassphrase.Should().Be("kp");
+        _sut.SftpRemoteBasePath.Should().Be("/custom");
+        _sut.SftpEncryptionPassphrase.Should().Be("enc");
+        _sut.SftpCompressBeforeUpload.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SftpDefaultValues_AreCorrect()
+    {
+        _sut.SftpHost.Should().BeEmpty();
+        _sut.SftpPort.Should().Be(22);
+        _sut.SftpUsername.Should().BeEmpty();
+        _sut.SftpPassword.Should().BeEmpty();
+        _sut.SftpPrivateKeyPath.Should().BeEmpty();
+        _sut.SftpPrivateKeyPassphrase.Should().BeEmpty();
+        _sut.SftpRemoteBasePath.Should().Be("/backups/zim");
+        _sut.SftpEncryptionPassphrase.Should().BeEmpty();
+        _sut.SftpCompressBeforeUpload.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SftpIsConnected_DefaultsFalse()
+    {
+        _sut.SftpIsConnected.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SftpBrowseItems_DefaultsEmpty()
+    {
+        _sut.SftpBrowseItems.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SftpConnectionStatus_DefaultsEmpty()
+    {
+        _sut.SftpConnectionStatus.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SftpBrowseKeyFile_WhenDialogReturnsPath_SetsKeyPath()
+    {
+        _dialogService.BrowseFolderAsync(Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(@"C:\keys\my_key");
+
+        await _sut.SftpBrowseKeyFileCommand.ExecuteAsync(null);
+
+        _sut.SftpPrivateKeyPath.Should().Be(@"C:\keys\my_key");
+    }
+
+    [Fact]
+    public async Task SftpBrowseKeyFile_WhenDialogCancelled_DoesNotChangePath()
+    {
+        _sut.SftpPrivateKeyPath = @"C:\existing\key";
+        _dialogService.BrowseFolderAsync(Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns((string?)null);
+
+        await _sut.SftpBrowseKeyFileCommand.ExecuteAsync(null);
+
+        _sut.SftpPrivateKeyPath.Should().Be(@"C:\existing\key");
+    }
+
+    [Fact]
+    public void StartCapture_WithSftp_SetsTransportMethodOnSession()
+    {
+        _sut.OutputPath = @"E:\out";
+        _sut.SelectedTransport = TransportMethod.Sftp;
+
+        _sut.StartCaptureCommand.Execute(null);
+
+        _session.TransportMethod.Should().Be(TransportMethod.Sftp);
+    }
 }

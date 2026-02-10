@@ -18,5 +18,10 @@ public enum TransportMethod
     /// <summary>
     /// Direct TCP transfer over WiFi between two machines running the agent.
     /// </summary>
-    DirectWiFi
+    DirectWiFi,
+
+    /// <summary>
+    /// SFTP transfer to/from a remote NAS or server.
+    /// </summary>
+    Sftp
 }

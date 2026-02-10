@@ -24,6 +24,17 @@ public interface ISessionState
     int DirectWiFiPort { get; set; }
     string DirectWiFiSharedKey { get; set; }
 
+    // SFTP configuration
+    string SftpHost { get; set; }
+    int SftpPort { get; set; }
+    string SftpUsername { get; set; }
+    string SftpPassword { get; set; }
+    string SftpPrivateKeyPath { get; set; }
+    string SftpPrivateKeyPassphrase { get; set; }
+    string SftpRemoteBasePath { get; set; }
+    string SftpEncryptionPassphrase { get; set; }
+    bool SftpCompressBeforeUpload { get; set; }
+
     /// <summary>
     /// Clears all state for a new migration.
     /// </summary>

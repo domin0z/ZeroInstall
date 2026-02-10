@@ -236,9 +236,69 @@
   - [x] GitHub Actions CI/CD pipeline (build, test, publish) — `.github/workflows/ci.yml`
   - [x] Automated releases with signed artifacts, changelog (on `v*` tags)
 
+## Phase 15: SFTP Transport & Remote Backup/Restore
+- [ ] **SFTP Transport:**
+  - [ ] New `SftpTransport` implementation (plugs into existing ITransport abstraction)
+  - [ ] SFTP connection management (host, port, username, key-based or password auth)
+  - [ ] Resumable uploads/downloads (track partial transfers, resume on reconnect)
+  - [ ] Bandwidth throttling option (avoid saturating customer's internet)
+  - [ ] Connection testing and diagnostics
+- [ ] **Compression Pipeline:**
+  - [ ] ZIP compression for disk images before upload (configurable compression level)
+  - [ ] Support sending as straight .zip, .img, .raw, or .vhdx
+  - [ ] Streaming compression (compress while uploading, avoid needing 2x disk space)
+- [ ] **Encryption:**
+  - [ ] AES-256 encryption for data in transit (on top of SFTP's SSH encryption)
+  - [ ] AES-256 encryption at rest (encrypted archive stored on NAS)
+  - [ ] Key management (passphrase-based key derivation, or shared key from company config)
+  - [ ] Option to enable/disable encryption per backup job
+- [ ] **Remote Backup (Source side — at customer location):**
+  - [ ] Full disk clone capture → compress → (optionally encrypt) → upload to company NAS via SFTP
+  - [ ] File/folder selective backup → compress → upload
+  - [ ] Progress reporting with upload speed, ETA, bytes transferred
+  - [ ] Background upload (capture locally first, then upload — or stream directly)
+- [ ] **Remote Restore (Destination side):**
+  - [ ] Download image from company NAS via SFTP → (decrypt if needed) → decompress → restore
+  - [ ] Restore locally at shop (fast LAN download from NAS)
+  - [ ] Restore remotely at customer site (download over internet)
+  - [ ] WinPE integration for bare-metal restore from SFTP source
+- [ ] **CLI + WPF Integration:**
+  - [ ] `zim capture --transport sftp --sftp-host nas.company.com --sftp-user tech ...`
+  - [ ] `zim restore --transport sftp --sftp-host nas.company.com ...`
+  - [ ] WPF: SFTP config panel in CaptureConfig/RestoreConfig views
+  - [ ] WPF: Settings screen — default SFTP server configuration
+- [ ] **NAS Directory Structure:**
+  - [ ] Organized by customer/date: `backups/{customer-name}/{date}/{image-files}`
+  - [ ] Manifest file per backup with metadata (source hostname, OS, image format, encrypted flag, checksum)
+  - [ ] Listing/browsing backups on the NAS from the app
+
+## Phase 16: Persistent Customer Backup Agent
+- [ ] **Scheduled Backup Service:**
+  - [ ] Windows Service that runs permanently on customer PCs
+  - [ ] Configurable backup schedule (daily, weekly, custom cron)
+  - [ ] File/folder backup mode (incremental — only changed files since last backup)
+  - [ ] Full image backup mode (periodic full disk clone on schedule)
+  - [ ] Retention policy (keep last N backups, auto-delete old ones on NAS)
+- [ ] **Customer-Facing Lightweight UI:**
+  - [ ] System tray icon with backup status (last backup time, next scheduled, in-progress)
+  - [ ] Simple config: what to back up, schedule, encryption on/off
+  - [ ] Manual "Back up now" button
+  - [ ] Restore request workflow (customer initiates, technician approves/assists)
+- [ ] **Technician Management:**
+  - [ ] Remote deployment of the agent to customer PCs (via zim-agent install or MSI)
+  - [ ] Central config push (update backup schedules, NAS credentials from company side)
+  - [ ] Alert/notification when a customer's backup fails or is overdue
+- [ ] **Storage:**
+  - [ ] Company-provided NAS storage (no cloud vendor dependency)
+  - [ ] Per-customer storage quotas (configurable)
+  - [ ] Deduplication-friendly incremental backups to minimize storage usage
+- [ ] **Security:**
+  - [ ] All backups encrypted at rest on NAS (customer data protection)
+  - [ ] SFTP for all transfers (no unencrypted internet traffic)
+  - [ ] Per-customer encryption keys (technician holds master key, customer can have recovery key)
+
 ## Future Considerations (Post-v1.0)
-- [ ] Central web dashboard for job tracking across all technicians
-- [ ] Cloud relay transport (for remote migrations over internet)
+- [ ] Central web dashboard for job tracking and backup monitoring across all technicians/customers
 - [ ] Bluetooth transport for nearby transfers
 - [ ] macOS/Linux source support (read data from non-Windows drives)
 - [ ] Active Directory / domain profile migration

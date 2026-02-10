@@ -4,8 +4,10 @@ using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ZeroInstall.App.Services;
+using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Migration;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Transport;
 
 namespace ZeroInstall.App.ViewModels;
 
@@ -17,6 +19,7 @@ public partial class RestoreConfigViewModel : ViewModelBase
     private readonly ISessionState _session;
     private readonly INavigationService _navigationService;
     private readonly IDialogService _dialogService;
+    private ISftpClientWrapper? _sftpClient;
 
     public override string Title => "Restore";
 
@@ -29,6 +32,49 @@ public partial class RestoreConfigViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _captureInfo = string.Empty;
+
+    // SFTP connection properties
+    [ObservableProperty]
+    private string _sftpHost = string.Empty;
+
+    [ObservableProperty]
+    private int _sftpPort = 22;
+
+    [ObservableProperty]
+    private string _sftpUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _sftpPassword = string.Empty;
+
+    [ObservableProperty]
+    private string _sftpPrivateKeyPath = string.Empty;
+
+    [ObservableProperty]
+    private string _sftpPrivateKeyPassphrase = string.Empty;
+
+    [ObservableProperty]
+    private string _sftpRemoteBasePath = "/backups/zim";
+
+    [ObservableProperty]
+    private string _sftpEncryptionPassphrase = string.Empty;
+
+    [ObservableProperty]
+    private bool _sftpCompressBeforeUpload = true;
+
+    // NAS Browser state
+    [ObservableProperty]
+    private string _sftpCurrentBrowsePath = "/";
+
+    [ObservableProperty]
+    private bool _sftpIsConnected;
+
+    [ObservableProperty]
+    private string _sftpConnectionStatus = string.Empty;
+
+    [ObservableProperty]
+    private TransportMethod _selectedTransport;
+
+    public ObservableCollection<SftpFileInfo> SftpBrowseItems { get; } = [];
 
     public ObservableCollection<UserMappingEntryViewModel> UserMappings { get; } = [];
 
@@ -46,6 +92,17 @@ public partial class RestoreConfigViewModel : ViewModelBase
             InputPath = _session.InputPath;
         }
 
+        SelectedTransport = _session.TransportMethod;
+        SftpHost = _session.SftpHost;
+        SftpPort = _session.SftpPort;
+        SftpUsername = _session.SftpUsername;
+        SftpPassword = _session.SftpPassword;
+        SftpPrivateKeyPath = _session.SftpPrivateKeyPath;
+        SftpPrivateKeyPassphrase = _session.SftpPrivateKeyPassphrase;
+        SftpRemoteBasePath = _session.SftpRemoteBasePath;
+        SftpEncryptionPassphrase = _session.SftpEncryptionPassphrase;
+        SftpCompressBeforeUpload = _session.SftpCompressBeforeUpload;
+
         return Task.CompletedTask;
     }
 
@@ -57,6 +114,55 @@ public partial class RestoreConfigViewModel : ViewModelBase
         {
             InputPath = path;
         }
+    }
+
+    [RelayCommand]
+    private async Task SftpConnectAsync()
+    {
+        try
+        {
+            SftpConnectionStatus = "Connecting...";
+            _sftpClient?.Dispose();
+            _sftpClient = new SftpClientWrapper(
+                SftpHost, SftpPort, SftpUsername,
+                string.IsNullOrEmpty(SftpPassword) ? null : SftpPassword,
+                string.IsNullOrEmpty(SftpPrivateKeyPath) ? null : SftpPrivateKeyPath,
+                string.IsNullOrEmpty(SftpPrivateKeyPassphrase) ? null : SftpPrivateKeyPassphrase);
+            _sftpClient.Connect();
+
+            SftpIsConnected = true;
+            SftpConnectionStatus = "Connected";
+            SftpCurrentBrowsePath = SftpRemoteBasePath;
+            await SftpBrowseToAsync(SftpRemoteBasePath);
+        }
+        catch (Exception ex)
+        {
+            SftpIsConnected = false;
+            SftpConnectionStatus = $"Failed: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private Task SftpBrowseToAsync(string path)
+    {
+        if (_sftpClient is null || !_sftpClient.IsConnected)
+            return Task.CompletedTask;
+
+        try
+        {
+            SftpBrowseItems.Clear();
+            SftpCurrentBrowsePath = path;
+
+            var items = _sftpClient.ListDirectory(path);
+            foreach (var item in items)
+                SftpBrowseItems.Add(item);
+        }
+        catch (Exception ex)
+        {
+            SftpConnectionStatus = $"Browse error: {ex.Message}";
+        }
+
+        return Task.CompletedTask;
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadCapture))]
@@ -125,6 +231,15 @@ public partial class RestoreConfigViewModel : ViewModelBase
     {
         _session.InputPath = InputPath;
         _session.UserMappings = UserMappings.Select(vm => vm.Model).ToList();
+        _session.SftpHost = SftpHost;
+        _session.SftpPort = SftpPort;
+        _session.SftpUsername = SftpUsername;
+        _session.SftpPassword = SftpPassword;
+        _session.SftpPrivateKeyPath = SftpPrivateKeyPath;
+        _session.SftpPrivateKeyPassphrase = SftpPrivateKeyPassphrase;
+        _session.SftpRemoteBasePath = SftpRemoteBasePath;
+        _session.SftpEncryptionPassphrase = SftpEncryptionPassphrase;
+        _session.SftpCompressBeforeUpload = SftpCompressBeforeUpload;
         _navigationService.NavigateTo<MigrationProgressViewModel>();
     }
 

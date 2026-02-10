@@ -4,6 +4,7 @@ using ZeroInstall.CLI.Infrastructure;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
 using ZeroInstall.Core.Services;
+using ZeroInstall.Core.Transport;
 
 namespace ZeroInstall.CLI.Commands;
 
@@ -49,9 +50,53 @@ internal static class CaptureCommand
             DefaultValueFactory = _ => "vhdx"
         };
 
+        var sftpHostOption = new Option<string?>("--sftp-host")
+        {
+            Description = "SFTP server hostname for remote upload"
+        };
+
+        var sftpPortOption = new Option<int>("--sftp-port")
+        {
+            Description = "SFTP server port",
+            DefaultValueFactory = _ => 22
+        };
+
+        var sftpUserOption = new Option<string?>("--sftp-user")
+        {
+            Description = "SFTP username"
+        };
+
+        var sftpPassOption = new Option<string?>("--sftp-pass")
+        {
+            Description = "SFTP password"
+        };
+
+        var sftpKeyOption = new Option<string?>("--sftp-key")
+        {
+            Description = "Path to SSH private key file"
+        };
+
+        var sftpPathOption = new Option<string>("--sftp-path")
+        {
+            Description = "Remote base path on SFTP server",
+            DefaultValueFactory = _ => "/backups/zim"
+        };
+
+        var encryptOption = new Option<string?>("--encrypt")
+        {
+            Description = "Encryption passphrase for AES-256 encryption"
+        };
+
+        var noCompressOption = new Option<bool>("--no-compress")
+        {
+            Description = "Disable compression before upload"
+        };
+
         var command = new Command("capture", "Capture data from this machine for migration")
         {
-            outputOption, tierOption, profileOption, allOption, volumeOption, formatOption
+            outputOption, tierOption, profileOption, allOption, volumeOption, formatOption,
+            sftpHostOption, sftpPortOption, sftpUserOption, sftpPassOption, sftpKeyOption,
+            sftpPathOption, encryptOption, noCompressOption
         };
 
         command.SetAction(async (parseResult, ct) =>
@@ -64,6 +109,14 @@ internal static class CaptureCommand
             var all = parseResult.GetValue(allOption);
             var volume = parseResult.GetValue(volumeOption);
             var format = parseResult.GetValue(formatOption) ?? "vhdx";
+            var sftpHost = parseResult.GetValue(sftpHostOption);
+            var sftpPort = parseResult.GetValue(sftpPortOption);
+            var sftpUser = parseResult.GetValue(sftpUserOption);
+            var sftpPass = parseResult.GetValue(sftpPassOption);
+            var sftpKey = parseResult.GetValue(sftpKeyOption);
+            var sftpPath = parseResult.GetValue(sftpPathOption) ?? "/backups/zim";
+            var encryptPassphrase = parseResult.GetValue(encryptOption);
+            var noCompress = parseResult.GetValue(noCompressOption);
 
             using var host = CliHost.BuildHost(verbose);
             var discovery = host.Services.GetRequiredService<IDiscoveryService>();
@@ -158,6 +211,45 @@ internal static class CaptureCommand
                         await regMigrator.CaptureAsync(regFileItems, output, progress, ct);
                         progress.Complete();
                     }
+                }
+
+                // SFTP upload if configured
+                if (!string.IsNullOrEmpty(sftpHost))
+                {
+                    Console.Error.WriteLine($"Uploading capture to SFTP server {sftpHost}...");
+                    using var sftpClient = new SftpClientWrapper(
+                        sftpHost, sftpPort, sftpUser ?? "anonymous", sftpPass, sftpKey);
+                    using var sftpTransport = new SftpTransport(
+                        sftpClient, sftpPath,
+                        Microsoft.Extensions.Logging.Abstractions.NullLogger<SftpTransport>.Instance,
+                        encryptPassphrase, !noCompress);
+
+                    var connected = await sftpTransport.TestConnectionAsync(ct);
+                    if (!connected)
+                    {
+                        Console.Error.WriteLine("Error: Could not connect to SFTP server.");
+                        return 1;
+                    }
+
+                    // Upload all files from output directory
+                    var files = Directory.GetFiles(output, "*", SearchOption.AllDirectories);
+                    foreach (var file in files)
+                    {
+                        var relativePath = Path.GetRelativePath(output, file).Replace('\\', '/');
+                        var fileInfo = new FileInfo(file);
+                        await using var fileStream = File.OpenRead(file);
+                        var metadata = new TransferMetadata
+                        {
+                            RelativePath = relativePath,
+                            SizeBytes = fileInfo.Length,
+                            Checksum = await ChecksumHelper.ComputeAsync(fileStream, ct)
+                        };
+                        fileStream.Position = 0;
+                        await sftpTransport.SendAsync(fileStream, metadata, progress, ct);
+                    }
+
+                    progress.Complete();
+                    Console.Error.WriteLine("SFTP upload complete.");
                 }
 
                 job.Status = JobStatus.Completed;

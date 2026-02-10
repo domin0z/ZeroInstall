@@ -32,4 +32,20 @@ public class TransportConverterTests
 
         result.Should().Be(Visibility.Collapsed);
     }
+
+    [Fact]
+    public void Convert_SftpMatch_ReturnsVisible()
+    {
+        var result = _sut.Convert(TransportMethod.Sftp, typeof(Visibility), "Sftp", CultureInfo.InvariantCulture);
+
+        result.Should().Be(Visibility.Visible);
+    }
+
+    [Fact]
+    public void Convert_SftpNoMatch_ReturnsCollapsed()
+    {
+        var result = _sut.Convert(TransportMethod.ExternalStorage, typeof(Visibility), "Sftp", CultureInfo.InvariantCulture);
+
+        result.Should().Be(Visibility.Collapsed);
+    }
 }

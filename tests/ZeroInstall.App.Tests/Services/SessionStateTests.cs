@@ -155,4 +155,91 @@ public class SessionStateTests
 
         _sut.DirectWiFiSharedKey.Should().BeEmpty();
     }
+
+    [Fact]
+    public void SftpConfig_DefaultValues()
+    {
+        _sut.SftpHost.Should().BeEmpty();
+        _sut.SftpPort.Should().Be(22);
+        _sut.SftpUsername.Should().BeEmpty();
+        _sut.SftpPassword.Should().BeEmpty();
+        _sut.SftpPrivateKeyPath.Should().BeEmpty();
+        _sut.SftpPrivateKeyPassphrase.Should().BeEmpty();
+        _sut.SftpRemoteBasePath.Should().Be("/backups/zim");
+        _sut.SftpEncryptionPassphrase.Should().BeEmpty();
+        _sut.SftpCompressBeforeUpload.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SftpConfig_SetProperties_ShouldRetainValues()
+    {
+        _sut.SftpHost = "nas.test.com";
+        _sut.SftpPort = 2222;
+        _sut.SftpUsername = "sftpuser";
+        _sut.SftpPassword = "sftppass";
+        _sut.SftpPrivateKeyPath = @"C:\keys\id_rsa";
+        _sut.SftpPrivateKeyPassphrase = "keypass";
+        _sut.SftpRemoteBasePath = "/data";
+        _sut.SftpEncryptionPassphrase = "aes";
+        _sut.SftpCompressBeforeUpload = false;
+
+        _sut.SftpHost.Should().Be("nas.test.com");
+        _sut.SftpPort.Should().Be(2222);
+        _sut.SftpUsername.Should().Be("sftpuser");
+        _sut.SftpPassword.Should().Be("sftppass");
+        _sut.SftpPrivateKeyPath.Should().Be(@"C:\keys\id_rsa");
+        _sut.SftpPrivateKeyPassphrase.Should().Be("keypass");
+        _sut.SftpRemoteBasePath.Should().Be("/data");
+        _sut.SftpEncryptionPassphrase.Should().Be("aes");
+        _sut.SftpCompressBeforeUpload.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Reset_ClearsSftpConfig()
+    {
+        _sut.SftpHost = "nas.test.com";
+        _sut.SftpPort = 2222;
+        _sut.SftpUsername = "user";
+        _sut.SftpPassword = "pass";
+        _sut.SftpPrivateKeyPath = @"C:\key";
+        _sut.SftpPrivateKeyPassphrase = "kp";
+        _sut.SftpRemoteBasePath = "/custom";
+        _sut.SftpEncryptionPassphrase = "enc";
+        _sut.SftpCompressBeforeUpload = false;
+
+        _sut.Reset();
+
+        _sut.SftpHost.Should().BeEmpty();
+        _sut.SftpPort.Should().Be(22);
+        _sut.SftpUsername.Should().BeEmpty();
+        _sut.SftpPassword.Should().BeEmpty();
+        _sut.SftpPrivateKeyPath.Should().BeEmpty();
+        _sut.SftpPrivateKeyPassphrase.Should().BeEmpty();
+        _sut.SftpRemoteBasePath.Should().Be("/backups/zim");
+        _sut.SftpEncryptionPassphrase.Should().BeEmpty();
+        _sut.SftpCompressBeforeUpload.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Reset_SftpConfig_IsIdempotent()
+    {
+        _sut.SftpHost = "test.com";
+        _sut.SftpEncryptionPassphrase = "secret";
+
+        _sut.Reset();
+        _sut.Reset();
+
+        _sut.SftpHost.Should().BeEmpty();
+        _sut.SftpEncryptionPassphrase.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Reset_ClearsSftpButNotDefaults()
+    {
+        _sut.Reset();
+
+        _sut.SftpPort.Should().Be(22);
+        _sut.SftpRemoteBasePath.Should().Be("/backups/zim");
+        _sut.SftpCompressBeforeUpload.Should().BeTrue();
+    }
 }

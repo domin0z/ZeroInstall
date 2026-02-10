@@ -74,4 +74,9 @@ public class TransferMetadata
     /// Total number of chunks.
     /// </summary>
     public int TotalChunks { get; set; } = 1;
+
+    /// <summary>
+    /// Whether this data is encrypted.
+    /// </summary>
+    public bool IsEncrypted { get; set; }
 }
