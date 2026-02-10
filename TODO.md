@@ -156,22 +156,28 @@
   - [x] Program.cs — System.CommandLine 2.0.0 entry point with root command + install/uninstall subcommands
 - [x] Write tests (47 new, 572 total) — models, protocol loopback, full transfer integration, service installer, console UI, host builder
 
-## Phase 11: WinPE Restore Environment
-- [ ] **WinPE ISO Builder:**
-  - [ ] Script to build custom WinPE image using Windows ADK
-  - [ ] Embed ZeroInstall restore tool into the WinPE image
-  - [ ] Driver injection wizard (browse INFs, OEM packs, NAS driver repo)
-  - [ ] Generate bootable ISO, write to USB
-  - [ ] Support UEFI and Legacy BIOS boot
-- [ ] **PXE Boot Server:**
-  - [ ] Configuration guide/scripts for NAS-based PXE (TFTP + DHCP options)
-  - [ ] WinPE image served via TFTP, boot menu
-- [ ] **Restore Tool (runs inside WinPE):**
-  - [ ] Minimal GUI or TUI for WinPE environment
-  - [ ] Browse NAS for .img/.raw/.vhdx, select target disk
-  - [ ] Apply image, post-restore driver injection (offline DISM)
-  - [ ] Verify integrity, reboot
-- [ ] Write tests for image application logic
+## Phase 11: WinPE Restore Environment ✅
+- [x] **Core Services:**
+  - [x] DiskInfo / VolumeDetail models for disk/volume enumeration
+  - [x] DiskEnumerationService — PowerShell Get-Disk/Get-Volume with JSON parsing (handles single-object quirk)
+  - [x] DriverInjectionService — DISM /Add-Driver wrapper with output parsing, .inf file discovery
+  - [x] DI registration in ServiceCollectionExtensions
+- [x] **WinPE Restore Tool (`zim-winpe`):**
+  - [x] System.CommandLine 2.0.0 entry point with `--image`, `--target`, `--driver-path`, `--skip-verify`, `--no-confirm`, `--verbose`
+  - [x] Interactive TUI mode (no args): image browse → metadata display → disk/volume selection → space validation → confirm → restore → driver injection → done
+  - [x] Headless mode (`--image` + `--target`): scripted/automated restore
+  - [x] WinPeHost — DI host builder with Serilog (file + console), Core + WinPE service registration
+  - [x] WinPeConsoleUI — numbered menus, disk/volume tables, image metadata display, progress bar, color-coded status
+  - [x] ImageBrowserService — recursive .img/.raw/.vhdx scan with .zim-meta.json metadata loading
+  - [x] RestoreOrchestrator — verify → restore → driver injection workflow with error handling
+  - [x] RestoreInteractiveCommand — full 12-step interactive TUI workflow
+- [x] **WinPE ISO Builder:**
+  - [x] Build-WinPE.ps1 — Windows ADK-based ISO builder with zim-winpe embedding, optional driver injection, UEFI + Legacy BIOS support
+  - [x] Add-Drivers.ps1 — standalone WIM driver injection script
+  - [x] tools/winpe/README.md — prerequisites and usage guide
+- [x] **PXE Boot:**
+  - [x] docs/PXE-Boot-Guide.md — TFTP/DHCP setup (WDS, dnsmasq, Serva), client config, troubleshooting
+- [x] Write tests (54 new, 626 total) — models, JSON parsing, DISM output parsing, image browsing, restore orchestration, console UI, host builder
 
 ## Phase 12: Testing & Quality
 - [ ] Achieve unit test coverage for all Core services
