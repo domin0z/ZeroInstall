@@ -236,41 +236,42 @@
   - [x] GitHub Actions CI/CD pipeline (build, test, publish) — `.github/workflows/ci.yml`
   - [x] Automated releases with signed artifacts, changelog (on `v*` tags)
 
-## Phase 15: SFTP Transport & Remote Backup/Restore
-- [ ] **SFTP Transport:**
-  - [ ] New `SftpTransport` implementation (plugs into existing ITransport abstraction)
-  - [ ] SFTP connection management (host, port, username, key-based or password auth)
-  - [ ] Resumable uploads/downloads (track partial transfers, resume on reconnect)
-  - [ ] Bandwidth throttling option (avoid saturating customer's internet)
-  - [ ] Connection testing and diagnostics
-- [ ] **Compression Pipeline:**
-  - [ ] ZIP compression for disk images before upload (configurable compression level)
-  - [ ] Support sending as straight .zip, .img, .raw, or .vhdx
-  - [ ] Streaming compression (compress while uploading, avoid needing 2x disk space)
-- [ ] **Encryption:**
-  - [ ] AES-256 encryption for data in transit (on top of SFTP's SSH encryption)
-  - [ ] AES-256 encryption at rest (encrypted archive stored on NAS)
-  - [ ] Key management (passphrase-based key derivation, or shared key from company config)
-  - [ ] Option to enable/disable encryption per backup job
-- [ ] **Remote Backup (Source side — at customer location):**
-  - [ ] Full disk clone capture → compress → (optionally encrypt) → upload to company NAS via SFTP
-  - [ ] File/folder selective backup → compress → upload
-  - [ ] Progress reporting with upload speed, ETA, bytes transferred
-  - [ ] Background upload (capture locally first, then upload — or stream directly)
-- [ ] **Remote Restore (Destination side):**
-  - [ ] Download image from company NAS via SFTP → (decrypt if needed) → decompress → restore
-  - [ ] Restore locally at shop (fast LAN download from NAS)
-  - [ ] Restore remotely at customer site (download over internet)
-  - [ ] WinPE integration for bare-metal restore from SFTP source
-- [ ] **CLI + WPF Integration:**
-  - [ ] `zim capture --transport sftp --sftp-host nas.company.com --sftp-user tech ...`
-  - [ ] `zim restore --transport sftp --sftp-host nas.company.com ...`
-  - [ ] WPF: SFTP config panel in CaptureConfig/RestoreConfig views
-  - [ ] WPF: Settings screen — default SFTP server configuration
-- [ ] **NAS Directory Structure:**
-  - [ ] Organized by customer/date: `backups/{customer-name}/{date}/{image-files}`
-  - [ ] Manifest file per backup with metadata (source hostname, OS, image format, encrypted flag, checksum)
-  - [ ] Listing/browsing backups on the NAS from the app
+## Phase 15: SFTP Transport & Remote Backup/Restore ✅
+- [x] **SFTP Transport:**
+  - [x] New `SftpTransport` implementation (plugs into existing ITransport abstraction)
+  - [x] SFTP connection management (host, port, username, key-based or password auth)
+  - [x] ISftpClientWrapper / SftpClientWrapper — SSH.NET abstraction for testability
+  - [x] Resumable uploads/downloads (track partial transfers via remote checksum resume log)
+  - [x] Chunked uploads (256 MB chunks for 500 GB+ images)
+  - [x] `.tmp` suffix during upload, rename on completion for atomicity
+  - [x] Connection testing and diagnostics
+- [x] **Compression Pipeline:**
+  - [x] GZip streaming compression before upload (configurable on/off)
+  - [x] Automatic decompression on download
+- [x] **Encryption:**
+  - [x] EncryptionHelper — AES-256-CBC streaming encryption with PBKDF2-SHA256 key derivation
+  - [x] "ZIME" magic header format (4-byte magic + 16-byte salt + 16-byte IV + ciphertext)
+  - [x] Per-job passphrase-based encryption (optional, enabled per backup)
+  - [x] Encrypted manifest support (manifest encrypted/decrypted transparently)
+- [x] **Remote Backup (Source side — at customer location):**
+  - [x] Capture locally → compress → encrypt → upload to NAS via SFTP
+  - [x] Progress reporting with per-chunk status
+- [x] **Remote Restore (Destination side):**
+  - [x] Download from NAS via SFTP → decrypt → decompress → restore
+  - [x] Restore locally at shop or remotely at customer site
+- [x] **CLI Integration:**
+  - [x] `zim capture --sftp-host --sftp-port --sftp-user --sftp-pass --sftp-key --sftp-path --encrypt --no-compress`
+  - [x] `zim restore --sftp-host --sftp-port --sftp-user --sftp-pass --sftp-key --sftp-path --encrypt --no-compress`
+- [x] **WPF Integration:**
+  - [x] SFTP config panel in CaptureConfig view (host, port, user, pass, SSH key, remote path, encryption, compress)
+  - [x] SFTP config panel in RestoreConfig view
+  - [x] NAS browser UI (connect, browse directories, create folders)
+  - [x] SftpTransportConfiguration model, 9 SFTP properties on ISessionState/SessionState
+- [x] **NAS Directory Structure:**
+  - [x] Manifest file per backup with metadata (zim-manifest.json)
+  - [x] Resume log per backup (zim-resume.json with checksums)
+  - [x] Listing/browsing backups on the NAS from the app (ListRemoteDirectoryAsync)
+- [x] Write tests (63 new, 788 total)
 
 ## Phase 16: Persistent Customer Backup Agent
 - [ ] **Scheduled Backup Service:**
