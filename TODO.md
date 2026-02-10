@@ -179,7 +179,40 @@
   - [x] docs/PXE-Boot-Guide.md — TFTP/DHCP setup (WDS, dnsmasq, Serva), client config, troubleshooting
 - [x] Write tests (54 new, 626 total) — models, JSON parsing, DISM output parsing, image browsing, restore orchestration, console UI, host builder
 
-## Phase 12: Testing & Quality
+## Phase 12: WPF App Support Screens ✅
+- [x] **Dialog Service:**
+  - [x] IDialogService / DialogService — wraps OpenFolderDialog + OpenFileDialog for testability
+- [x] **App Settings:**
+  - [x] AppSettings model (NasPath, DefaultTransportMethod, DefaultLogLevel)
+  - [x] IAppSettings / JsonAppSettings — JSON persistence at `{basePath}/config/settings.json`
+- [x] **Transport Configuration:**
+  - [x] TransportMethodToVisibilityConverter — show/hide panels by selected transport
+  - [x] ISessionState / SessionState — 5 new transport properties (NetworkSharePath, Username, Password, DirectWiFiPort, SharedKey)
+  - [x] CaptureConfigView — conditional Network Share + Direct WiFi config panels
+- [x] **Dialog Wiring:**
+  - [x] CaptureConfigViewModel — IDialogService for BrowseOutput, transport config save to session
+  - [x] RestoreConfigViewModel — IDialogService for BrowseInput
+- [x] **Profile Management:**
+  - [x] ProfileListViewModel — list local/NAS profiles, create/edit/delete/load actions
+  - [x] ProfileEditorViewModel — full profile editor with all section fields + save/cancel
+  - [x] ProfileListView.xaml — dual-section list (local + NAS), toolbar
+  - [x] ProfileEditorView.xaml — scrollable form with grouped checkbox sections
+- [x] **Job History:**
+  - [x] JobHistoryViewModel — load jobs, select for detail, export report via dialog
+  - [x] JobHistoryView.xaml — split list + detail panel layout
+- [x] **Settings Screen:**
+  - [x] SettingsViewModel — NAS path, default transport, log level, save/cancel
+  - [x] SettingsView.xaml — NAS config, defaults, about section
+- [x] **Entry Points:**
+  - [x] WelcomeViewModel — 3 new navigation commands (Profiles, Job History, Settings)
+  - [x] WelcomeView.xaml — 3 auxiliary link buttons below role cards
+  - [x] MainWindowViewModel — OpenSettings command
+  - [x] MainWindow.xaml — 4 new DataTemplates, settings gear button in header
+- [x] **DI Registration:**
+  - [x] AppHost — IDialogService, IAppSettings, 4 new ViewModels, NAS-aware IProfileManager
+- [x] Write tests (62 new, 688 total)
+
+## Phase 13: Testing & Quality
 - [ ] Achieve unit test coverage for all Core services
 - [ ] Integration tests for each transport method
 - [ ] Integration tests for agent-to-agent transfer
@@ -189,7 +222,7 @@
 - [ ] Test portable mode from USB flash drive (FAT32 and NTFS)
 - [ ] Test with real-world app scenarios (Office, Chrome, QuickBooks)
 
-## Phase 13: Packaging & Code Signing
+## Phase 14: Packaging & Code Signing
 - [ ] **Build pipeline:**
   - [ ] Publish self-contained single-file executables (win-x64)
   - [ ] Version stamping (semantic versioning)
