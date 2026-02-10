@@ -17,6 +17,13 @@ internal sealed class SessionState : ISessionState
     public string InputPath { get; set; } = string.Empty;
     public MigrationJob? CurrentJob { get; set; }
 
+    // Transport configuration
+    public string NetworkSharePath { get; set; } = string.Empty;
+    public string NetworkShareUsername { get; set; } = string.Empty;
+    public string NetworkSharePassword { get; set; } = string.Empty;
+    public int DirectWiFiPort { get; set; } = 19850;
+    public string DirectWiFiSharedKey { get; set; } = string.Empty;
+
     public void Reset()
     {
         Role = default;
@@ -26,5 +33,10 @@ internal sealed class SessionState : ISessionState
         OutputPath = string.Empty;
         InputPath = string.Empty;
         CurrentJob = null;
+        NetworkSharePath = string.Empty;
+        NetworkShareUsername = string.Empty;
+        NetworkSharePassword = string.Empty;
+        DirectWiFiPort = 19850;
+        DirectWiFiSharedKey = string.Empty;
     }
 }

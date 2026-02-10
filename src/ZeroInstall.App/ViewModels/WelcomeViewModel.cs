@@ -39,6 +39,24 @@ public partial class WelcomeViewModel : ViewModelBase
         _session.Role = MachineRole.Destination;
         _navigationService.NavigateTo<RestoreConfigViewModel>();
     }
+
+    [RelayCommand]
+    private void OpenProfileManager()
+    {
+        _navigationService.NavigateTo<ProfileListViewModel>();
+    }
+
+    [RelayCommand]
+    private void OpenJobHistory()
+    {
+        _navigationService.NavigateTo<JobHistoryViewModel>();
+    }
+
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        _navigationService.NavigateTo<SettingsViewModel>();
+    }
 }
 
 /// <summary>

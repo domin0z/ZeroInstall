@@ -70,4 +70,28 @@ public class WelcomeViewModelTests
 
         _session.Received(1).Role = MachineRole.Destination;
     }
+
+    [Fact]
+    public void OpenProfileManagerCommand_NavigatesToProfileList()
+    {
+        _sut.OpenProfileManagerCommand.Execute(null);
+
+        _navService.Received(1).NavigateTo<ProfileListViewModel>();
+    }
+
+    [Fact]
+    public void OpenJobHistoryCommand_NavigatesToJobHistory()
+    {
+        _sut.OpenJobHistoryCommand.Execute(null);
+
+        _navService.Received(1).NavigateTo<JobHistoryViewModel>();
+    }
+
+    [Fact]
+    public void OpenSettingsCommand_NavigatesToSettings()
+    {
+        _sut.OpenSettingsCommand.Execute(null);
+
+        _navService.Received(1).NavigateTo<SettingsViewModel>();
+    }
 }

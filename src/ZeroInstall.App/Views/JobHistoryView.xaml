@@ -1,0 +1,179 @@
+<UserControl x:Class="ZeroInstall.App.Views.JobHistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:ZeroInstall.App.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource SurfaceLightGrayBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource BackgroundWhiteBrush}"
+                BorderBrush="{StaticResource BorderGrayBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <Grid>
+                <TextBlock Text="Job History"
+                           Style="{StaticResource SubheaderText}"
+                           FontSize="18"
+                           VerticalAlignment="Center" />
+                <Button Content="Refresh"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding RefreshCommand}"
+                        HorizontalAlignment="Right"
+                        Padding="16,6" />
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="1" Margin="20,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Job List -->
+            <ListView Grid.Column="0"
+                      ItemsSource="{Binding Jobs}"
+                      SelectedItem="{Binding SelectedJob}"
+                      BorderThickness="1"
+                      BorderBrush="{StaticResource BorderGrayBrush}"
+                      Background="{StaticResource BackgroundWhiteBrush}"
+                      Margin="0,0,12,0">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="8,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Status badge -->
+                            <Border Grid.Column="0"
+                                    Background="{StaticResource PrimaryTealBrush}"
+                                    CornerRadius="4"
+                                    Padding="8,2"
+                                    Margin="0,0,12,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Status}"
+                                           FontSize="11"
+                                           Foreground="White" />
+                            </Border>
+
+                            <!-- Details -->
+                            <StackPanel Grid.Column="1">
+                                <TextBlock FontSize="13" Foreground="{StaticResource TextPrimaryBrush}">
+                                    <Run Text="{Binding SourceHostname, Mode=OneWay}" />
+                                    <Run Text=" → " />
+                                    <Run Text="{Binding DestinationHostname, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Text="{Binding CreatedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                           FontSize="11"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </StackPanel>
+
+                            <!-- Item count -->
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding Items.Count, StringFormat='{}{0} items'}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!-- Detail Panel (visible when SelectedJob != null) -->
+            <Border Grid.Column="1"
+                    Width="280"
+                    Background="{StaticResource BackgroundWhiteBrush}"
+                    BorderBrush="{StaticResource BorderGrayBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="16,12"
+                    Visibility="{Binding SelectedJob, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel DataContext="{Binding SelectedJob}">
+                    <TextBlock Text="Job Details"
+                               FontWeight="Bold" FontSize="15"
+                               Foreground="{StaticResource PrimaryTealBrush}"
+                               Margin="0,0,0,12" />
+
+                    <TextBlock Text="Job ID" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding JobId}" FontSize="12"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock Text="Status" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding Status}" FontSize="12"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock Text="Source" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding SourceHostname}" FontSize="12"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock Text="Destination" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding DestinationHostname}" FontSize="12"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock Text="Transport" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding TransportMethod}" FontSize="12"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock Text="Items" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding Items.Count}" FontSize="12"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock Text="Created" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding CreatedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                               FontSize="12" Margin="0,0,0,8" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status + Bottom Bar -->
+        <Border Grid.Row="2"
+                Background="{StaticResource BackgroundWhiteBrush}"
+                BorderBrush="{StaticResource BorderGrayBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button Content="Export Report"
+                            Style="{StaticResource AccentButton}"
+                            Command="{Binding ExportReportCommand}"
+                            Padding="16,8"
+                            Margin="0,0,12,0" />
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Style="{StaticResource BodyText}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+                <Button Content="Back"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding GoBackCommand}"
+                        HorizontalAlignment="Right"
+                        Padding="16,8" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

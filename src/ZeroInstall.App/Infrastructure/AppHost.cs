@@ -45,10 +45,22 @@ internal static class AppHost
                 services.AddSingleton<IJobLogger>(sp =>
                     new JsonJobLogger(dataPath, sp.GetRequiredService<ILogger<JsonJobLogger>>()));
 
-                // Profile manager — local profiles in {basePath}/profiles, optional NAS
+                // App settings — uses {basePath}/config for settings.json
+                var configPath = Path.Combine(basePath, "config");
+                services.AddSingleton<IAppSettings>(sp =>
+                    new JsonAppSettings(configPath, sp.GetRequiredService<ILogger<JsonAppSettings>>()));
+
+                // Profile manager — local profiles in {basePath}/profiles, NAS from app settings
                 var profilesPath = Path.Combine(basePath, "profiles");
                 services.AddSingleton<IProfileManager>(sp =>
-                    new JsonProfileManager(profilesPath, null, sp.GetRequiredService<ILogger<JsonProfileManager>>()));
+                {
+                    var appSettings = sp.GetRequiredService<IAppSettings>();
+                    return new JsonProfileManager(profilesPath, appSettings.Current.NasPath,
+                        sp.GetRequiredService<ILogger<JsonProfileManager>>());
+                });
+
+                // Dialog service
+                services.AddSingleton<IDialogService, DialogService>();
 
                 // Session state (singleton — shared across views)
                 services.AddSingleton<ISessionState, SessionState>();
@@ -67,6 +79,10 @@ internal static class AppHost
                 services.AddTransient<RestoreConfigViewModel>();
                 services.AddTransient<MigrationProgressViewModel>();
                 services.AddTransient<JobSummaryViewModel>();
+                services.AddTransient<ProfileListViewModel>();
+                services.AddTransient<ProfileEditorViewModel>();
+                services.AddTransient<JobHistoryViewModel>();
+                services.AddTransient<SettingsViewModel>();
 
                 // Window
                 services.AddSingleton<MainWindow>();

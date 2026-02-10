@@ -68,5 +68,13 @@ public class MainWindowViewModelTests
         _sut.CanGoForward.Should().BeTrue();
     }
 
+    [Fact]
+    public void OpenSettingsCommand_NavigatesToSettingsViewModel()
+    {
+        _sut.OpenSettingsCommand.Execute(null);
+
+        _navService.Received(1).NavigateTo<SettingsViewModel>();
+    }
+
     private class TestStubViewModel : ViewModelBase { }
 }

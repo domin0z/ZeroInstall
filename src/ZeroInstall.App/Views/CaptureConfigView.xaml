@@ -3,8 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:ZeroInstall.App.Converters"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="550" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <converters:TransportMethodToVisibilityConverter x:Key="TransportToVisibility" />
+    </UserControl.Resources>
 
     <Grid Background="{StaticResource SurfaceLightGrayBrush}">
         <Grid.RowDefinitions>
@@ -58,12 +63,78 @@
                           SelectedItem="{Binding SelectedTransport}"
                           Padding="8,6"
                           FontSize="13"
-                          Margin="0,0,0,24" />
+                          Margin="0,0,0,12" />
+
+                <!-- Network Share Config -->
+                <Border Background="{StaticResource BackgroundWhiteBrush}"
+                        BorderBrush="{StaticResource BorderGrayBrush}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="16,12"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding SelectedTransport, Converter={StaticResource TransportToVisibility}, ConverterParameter=NetworkShare}">
+                    <StackPanel>
+                        <TextBlock Text="Network Share Settings"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{StaticResource PrimaryTealBrush}"
+                                   Margin="0,0,0,8" />
+                        <TextBlock Text="Share Path (UNC)" FontSize="12" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding NetworkSharePath, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="8,6" FontSize="13" Margin="0,0,0,8" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Username" FontSize="12" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding NetworkShareUsername, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6" FontSize="13" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Password" FontSize="12" Margin="0,0,0,4" />
+                                <PasswordBox Padding="8,6" FontSize="13" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Direct WiFi Config -->
+                <Border Background="{StaticResource BackgroundWhiteBrush}"
+                        BorderBrush="{StaticResource BorderGrayBrush}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="16,12"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding SelectedTransport, Converter={StaticResource TransportToVisibility}, ConverterParameter=DirectWiFi}">
+                    <StackPanel>
+                        <TextBlock Text="Direct WiFi Settings"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{StaticResource PrimaryTealBrush}"
+                                   Margin="0,0,0,8" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Port" FontSize="12" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding DirectWiFiPort, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6" FontSize="13" Width="100" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Shared Key" FontSize="12" Margin="0,0,0,4" />
+                                <TextBox Text="{Binding DirectWiFiSharedKey, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6" FontSize="13" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
                 <!-- Summary -->
                 <TextBlock Text="Summary"
                            Style="{StaticResource SubheaderText}"
-                           Margin="0,0,0,12" />
+                           Margin="0,8,0,12" />
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                     <Border Background="{StaticResource SurfaceLightGrayBrush}"
                             BorderBrush="{StaticResource BorderGrayBrush}"

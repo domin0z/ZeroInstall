@@ -55,6 +55,11 @@ public class SessionStateTests
         _sut.OutputPath = @"E:\capture";
         _sut.InputPath = @"E:\restore";
         _sut.CurrentJob = new MigrationJob();
+        _sut.NetworkSharePath = @"\\nas\share";
+        _sut.NetworkShareUsername = "admin";
+        _sut.NetworkSharePassword = "pass";
+        _sut.DirectWiFiPort = 12345;
+        _sut.DirectWiFiSharedKey = "secret";
 
         _sut.Reset();
 
@@ -65,6 +70,11 @@ public class SessionStateTests
         _sut.OutputPath.Should().BeEmpty();
         _sut.InputPath.Should().BeEmpty();
         _sut.CurrentJob.Should().BeNull();
+        _sut.NetworkSharePath.Should().BeEmpty();
+        _sut.NetworkShareUsername.Should().BeEmpty();
+        _sut.NetworkSharePassword.Should().BeEmpty();
+        _sut.DirectWiFiPort.Should().Be(19850);
+        _sut.DirectWiFiSharedKey.Should().BeEmpty();
     }
 
     [Fact]
@@ -84,5 +94,65 @@ public class SessionStateTests
 
         _sut.Role.Should().Be(MachineRole.Source);
         _sut.OutputPath.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TransportConfig_DefaultValues()
+    {
+        _sut.NetworkSharePath.Should().BeEmpty();
+        _sut.NetworkShareUsername.Should().BeEmpty();
+        _sut.NetworkSharePassword.Should().BeEmpty();
+        _sut.DirectWiFiPort.Should().Be(19850);
+        _sut.DirectWiFiSharedKey.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TransportConfig_SetProperties_ShouldRetainValues()
+    {
+        _sut.NetworkSharePath = @"\\nas\data";
+        _sut.NetworkShareUsername = "user1";
+        _sut.NetworkSharePassword = "p@ss";
+        _sut.DirectWiFiPort = 9999;
+        _sut.DirectWiFiSharedKey = "mykey";
+
+        _sut.NetworkSharePath.Should().Be(@"\\nas\data");
+        _sut.NetworkShareUsername.Should().Be("user1");
+        _sut.NetworkSharePassword.Should().Be("p@ss");
+        _sut.DirectWiFiPort.Should().Be(9999);
+        _sut.DirectWiFiSharedKey.Should().Be("mykey");
+    }
+
+    [Fact]
+    public void Reset_ClearsTransportConfig()
+    {
+        _sut.NetworkSharePath = @"\\nas\share";
+        _sut.DirectWiFiPort = 12345;
+
+        _sut.Reset();
+
+        _sut.NetworkSharePath.Should().BeEmpty();
+        _sut.DirectWiFiPort.Should().Be(19850);
+    }
+
+    [Fact]
+    public void Reset_ClearsNetworkCredentials()
+    {
+        _sut.NetworkShareUsername = "admin";
+        _sut.NetworkSharePassword = "secret";
+
+        _sut.Reset();
+
+        _sut.NetworkShareUsername.Should().BeEmpty();
+        _sut.NetworkSharePassword.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Reset_ClearsDirectWiFiSharedKey()
+    {
+        _sut.DirectWiFiSharedKey = "key123";
+
+        _sut.Reset();
+
+        _sut.DirectWiFiSharedKey.Should().BeEmpty();
     }
 }

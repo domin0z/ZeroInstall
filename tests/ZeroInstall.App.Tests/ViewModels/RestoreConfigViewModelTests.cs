@@ -8,11 +8,12 @@ public class RestoreConfigViewModelTests
 {
     private readonly ISessionState _session = new SessionState();
     private readonly INavigationService _navService = Substitute.For<INavigationService>();
+    private readonly IDialogService _dialogService = Substitute.For<IDialogService>();
     private readonly RestoreConfigViewModel _sut;
 
     public RestoreConfigViewModelTests()
     {
-        _sut = new RestoreConfigViewModel(_session, _navService);
+        _sut = new RestoreConfigViewModel(_session, _navService, _dialogService);
     }
 
     [Fact]
@@ -88,5 +89,42 @@ public class RestoreConfigViewModelTests
         {
             Directory.Delete(tempDir, true);
         }
+    }
+
+    [Fact]
+    public async Task BrowseInput_WhenDialogReturnsPath_SetsInputPath()
+    {
+        _dialogService.BrowseFolderAsync(Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(@"E:\selected");
+
+        await _sut.BrowseInputCommand.ExecuteAsync(null);
+
+        _sut.InputPath.Should().Be(@"E:\selected");
+    }
+
+    [Fact]
+    public async Task BrowseInput_WhenDialogCancelled_DoesNotChangeInputPath()
+    {
+        _sut.InputPath = @"E:\original";
+        _dialogService.BrowseFolderAsync(Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns((string?)null);
+
+        await _sut.BrowseInputCommand.ExecuteAsync(null);
+
+        _sut.InputPath.Should().Be(@"E:\original");
+    }
+
+    [Fact]
+    public async Task BrowseInput_PassesCurrentInputPathAsInitial()
+    {
+        _sut.InputPath = @"E:\current";
+        _dialogService.BrowseFolderAsync(Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns((string?)null);
+
+        await _sut.BrowseInputCommand.ExecuteAsync(null);
+
+        await _dialogService.Received(1).BrowseFolderAsync(
+            Arg.Any<string?>(),
+            Arg.Is<string?>(s => s == @"E:\current"));
     }
 }

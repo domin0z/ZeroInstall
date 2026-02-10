@@ -46,6 +46,12 @@ public partial class MainWindowViewModel : ObservableObject
         _navigationService.GoForward();
     }
 
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        _navigationService.NavigateTo<SettingsViewModel>();
+    }
+
     private void HandleNavigationChanged(ViewModelBase viewModel)
     {
         CurrentViewModel = viewModel;

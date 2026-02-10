@@ -14,6 +14,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
 {
     private readonly ISessionState _session;
     private readonly INavigationService _navigationService;
+    private readonly IDialogService _dialogService;
 
     public override string Title => "Configure";
 
@@ -36,13 +37,31 @@ public partial class CaptureConfigViewModel : ViewModelBase
     [ObservableProperty]
     private string _totalSizeFormatted = "0 B";
 
+    // Transport config — Network Share
+    [ObservableProperty]
+    private string _networkSharePath = string.Empty;
+
+    [ObservableProperty]
+    private string _networkShareUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _networkSharePassword = string.Empty;
+
+    // Transport config — Direct WiFi
+    [ObservableProperty]
+    private int _directWiFiPort = 19850;
+
+    [ObservableProperty]
+    private string _directWiFiSharedKey = string.Empty;
+
     public ObservableCollection<TransportMethod> TransportMethods { get; } =
         [TransportMethod.ExternalStorage, TransportMethod.NetworkShare, TransportMethod.DirectWiFi];
 
-    public CaptureConfigViewModel(ISessionState session, INavigationService navigationService)
+    public CaptureConfigViewModel(ISessionState session, INavigationService navigationService, IDialogService dialogService)
     {
         _session = session;
         _navigationService = navigationService;
+        _dialogService = dialogService;
     }
 
     public override Task OnNavigatedTo()
@@ -59,14 +78,24 @@ public partial class CaptureConfigViewModel : ViewModelBase
         var totalBytes = items.Sum(i => i.EstimatedSizeBytes);
         TotalSizeFormatted = FormatBytes(totalBytes);
 
+        // Restore transport config from session
+        NetworkSharePath = _session.NetworkSharePath;
+        NetworkShareUsername = _session.NetworkShareUsername;
+        NetworkSharePassword = _session.NetworkSharePassword;
+        DirectWiFiPort = _session.DirectWiFiPort;
+        DirectWiFiSharedKey = _session.DirectWiFiSharedKey;
+
         return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private void BrowseOutput()
+    private async Task BrowseOutputAsync()
     {
-        // In production this opens a folder browser dialog via a service.
-        // For testability, the path is set directly.
+        var path = await _dialogService.BrowseFolderAsync("Select Output Folder", OutputPath);
+        if (path is not null)
+        {
+            OutputPath = path;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanStartCapture))]
@@ -74,12 +103,17 @@ public partial class CaptureConfigViewModel : ViewModelBase
     {
         _session.OutputPath = OutputPath;
         _session.TransportMethod = SelectedTransport;
+        _session.NetworkSharePath = NetworkSharePath;
+        _session.NetworkShareUsername = NetworkShareUsername;
+        _session.NetworkSharePassword = NetworkSharePassword;
+        _session.DirectWiFiPort = DirectWiFiPort;
+        _session.DirectWiFiSharedKey = DirectWiFiSharedKey;
         _navigationService.NavigateTo<MigrationProgressViewModel>();
     }
 
     internal bool CanStartCapture() => !string.IsNullOrWhiteSpace(OutputPath);
 
-    private static string FormatBytes(long bytes)
+    internal static string FormatBytes(long bytes)
     {
         if (bytes <= 0) return "0 B";
 

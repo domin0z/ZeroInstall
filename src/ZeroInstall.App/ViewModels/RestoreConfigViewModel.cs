@@ -16,6 +16,7 @@ public partial class RestoreConfigViewModel : ViewModelBase
 {
     private readonly ISessionState _session;
     private readonly INavigationService _navigationService;
+    private readonly IDialogService _dialogService;
 
     public override string Title => "Restore";
 
@@ -31,10 +32,11 @@ public partial class RestoreConfigViewModel : ViewModelBase
 
     public ObservableCollection<UserMappingEntryViewModel> UserMappings { get; } = [];
 
-    public RestoreConfigViewModel(ISessionState session, INavigationService navigationService)
+    public RestoreConfigViewModel(ISessionState session, INavigationService navigationService, IDialogService dialogService)
     {
         _session = session;
         _navigationService = navigationService;
+        _dialogService = dialogService;
     }
 
     public override Task OnNavigatedTo()
@@ -48,9 +50,13 @@ public partial class RestoreConfigViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void BrowseInput()
+    private async Task BrowseInputAsync()
     {
-        // In production this opens a folder browser dialog via a service.
+        var path = await _dialogService.BrowseFolderAsync("Select Capture Folder", InputPath);
+        if (path is not null)
+        {
+            InputPath = path;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadCapture))]

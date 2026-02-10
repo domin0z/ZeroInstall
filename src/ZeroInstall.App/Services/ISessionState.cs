@@ -17,6 +17,13 @@ public interface ISessionState
     string InputPath { get; set; }
     MigrationJob? CurrentJob { get; set; }
 
+    // Transport configuration
+    string NetworkSharePath { get; set; }
+    string NetworkShareUsername { get; set; }
+    string NetworkSharePassword { get; set; }
+    int DirectWiFiPort { get; set; }
+    string DirectWiFiSharedKey { get; set; }
+
     /// <summary>
     /// Clears all state for a new migration.
     /// </summary>
