@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using ZeroInstall.App.Services;
+using ZeroInstall.Core.Discovery;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
 using ZeroInstall.Core.Services;
@@ -22,6 +23,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
     private readonly IBitLockerService? _bitLockerService;
     private readonly IFirmwareService? _firmwareService;
     private readonly IDomainService? _domainService;
+    private readonly ICrossPlatformDiscoveryService? _crossPlatformDiscovery;
     private ISftpClientWrapper? _sftpClient;
 
     public override string Title => "Configure";
@@ -176,6 +178,30 @@ public partial class CaptureConfigViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showDomainWarning;
 
+    // Cross-platform source
+    [ObservableProperty]
+    private string _sourcePath = string.Empty;
+
+    [ObservableProperty]
+    private SourcePlatform _detectedPlatform;
+
+    [ObservableProperty]
+    private string _detectedPlatformDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string? _detectedOsVersion;
+
+    [ObservableProperty]
+    private bool _showPlatformBanner;
+
+    [ObservableProperty]
+    private string _crossPlatformWarning = string.Empty;
+
+    [ObservableProperty]
+    private bool _showCrossPlatformWarning;
+
+    public bool IsExternalSource => !string.IsNullOrEmpty(SourcePath);
+
     public ObservableCollection<DiscoveredBluetoothDevice> BluetoothDiscoveredDevices { get; } = [];
 
     public ObservableCollection<SftpFileInfo> SftpBrowseItems { get; } = [];
@@ -189,7 +215,8 @@ public partial class CaptureConfigViewModel : ViewModelBase
         IDialogService dialogService,
         IBitLockerService? bitLockerService = null,
         IFirmwareService? firmwareService = null,
-        IDomainService? domainService = null)
+        IDomainService? domainService = null,
+        ICrossPlatformDiscoveryService? crossPlatformDiscovery = null)
     {
         _session = session;
         _navigationService = navigationService;
@@ -197,6 +224,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
         _bitLockerService = bitLockerService;
         _firmwareService = firmwareService;
         _domainService = domainService;
+        _crossPlatformDiscovery = crossPlatformDiscovery;
     }
 
     public override async Task OnNavigatedTo()
@@ -212,6 +240,13 @@ public partial class CaptureConfigViewModel : ViewModelBase
 
         var totalBytes = items.Sum(i => i.EstimatedSizeBytes);
         TotalSizeFormatted = FormatBytes(totalBytes);
+
+        // Restore cross-platform source path from session
+        SourcePath = _session.SourcePath;
+        if (!string.IsNullOrEmpty(SourcePath))
+        {
+            await DetectPlatformAsync();
+        }
 
         // Restore transport config from session
         NetworkSharePath = _session.NetworkSharePath;
@@ -360,6 +395,63 @@ public partial class CaptureConfigViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task BrowseSourceAsync()
+    {
+        var path = await _dialogService.BrowseFolderAsync("Select Source Drive", SourcePath);
+        if (path is not null)
+        {
+            SourcePath = path;
+            _session.SourcePath = path;
+            OnPropertyChanged(nameof(IsExternalSource));
+            await DetectPlatformAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task DetectPlatformAsync()
+    {
+        if (_crossPlatformDiscovery is null || string.IsNullOrEmpty(SourcePath))
+        {
+            ShowPlatformBanner = false;
+            ShowCrossPlatformWarning = false;
+            return;
+        }
+
+        try
+        {
+            DetectedPlatform = await _crossPlatformDiscovery.DetectSourcePlatformAsync(SourcePath);
+
+            if (DetectedPlatform is SourcePlatform.MacOs or SourcePlatform.Linux)
+            {
+                var platformName = DetectedPlatform == SourcePlatform.MacOs ? "macOS" : "Linux";
+                var result = await _crossPlatformDiscovery.DiscoverAllAsync(SourcePath);
+                DetectedOsVersion = result.OsVersion;
+
+                DetectedPlatformDisplay = !string.IsNullOrEmpty(DetectedOsVersion)
+                    ? $"{platformName} source detected ({DetectedOsVersion})"
+                    : $"{platformName} source detected";
+
+                ShowPlatformBanner = true;
+
+                CrossPlatformWarning = "Registry capture and full disk clone are not available for " +
+                                       "cross-platform sources. Only package-based migration and " +
+                                       "profile/file transfer are supported.";
+                ShowCrossPlatformWarning = true;
+            }
+            else
+            {
+                ShowPlatformBanner = false;
+                ShowCrossPlatformWarning = false;
+            }
+        }
+        catch
+        {
+            ShowPlatformBanner = false;
+            ShowCrossPlatformWarning = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task BrowseOutputAsync()
     {
         var path = await _dialogService.BrowseFolderAsync("Select Output Folder", OutputPath);
@@ -450,6 +542,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanStartCapture))]
     private void StartCapture()
     {
+        _session.SourcePath = SourcePath;
         _session.OutputPath = OutputPath;
         _session.TransportMethod = SelectedTransport;
         _session.NetworkSharePath = NetworkSharePath;

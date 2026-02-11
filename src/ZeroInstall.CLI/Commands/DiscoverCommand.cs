@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using ZeroInstall.CLI.Infrastructure;
+using ZeroInstall.Core.Discovery;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
 using ZeroInstall.Core.Services;
@@ -8,7 +9,7 @@ using ZeroInstall.Core.Services;
 namespace ZeroInstall.CLI.Commands;
 
 /// <summary>
-/// zim discover [--type apps|profiles|settings|all] [--json] [--verbose]
+/// zim discover [--type apps|profiles|settings|all] [--source-path path] [--json] [--verbose]
 /// Scans the machine and outputs discovered items.
 /// </summary>
 internal static class DiscoverCommand
@@ -21,9 +22,14 @@ internal static class DiscoverCommand
             DefaultValueFactory = _ => "all"
         };
 
+        var sourcePathOption = new Option<string?>("--source-path")
+        {
+            Description = "Path to mounted foreign drive (macOS/Linux) for cross-platform discovery"
+        };
+
         var command = new Command("discover", "Scan this machine for applications, profiles, and settings")
         {
-            typeOption
+            typeOption, sourcePathOption
         };
 
         command.SetAction(async (parseResult, ct) =>
@@ -31,57 +37,99 @@ internal static class DiscoverCommand
             var verbose = parseResult.GetValue(verboseOption);
             var json = parseResult.GetValue(jsonOption);
             var type = parseResult.GetValue(typeOption) ?? "all";
+            var sourcePath = parseResult.GetValue(sourcePathOption);
 
             using var host = CliHost.BuildHost(verbose);
-            var discovery = host.Services.GetRequiredService<IDiscoveryService>();
             var progress = new ConsoleProgressReporter();
 
             try
             {
                 IReadOnlyList<MigrationItem> items;
 
-                switch (type.ToLowerInvariant())
+                // Cross-platform discovery path
+                if (!string.IsNullOrEmpty(sourcePath))
                 {
-                    case "apps":
-                    case "applications":
-                        var apps = await discovery.DiscoverApplicationsAsync(ct);
-                        items = apps.Select(a => new MigrationItem
-                        {
-                            DisplayName = a.Name,
-                            ItemType = MigrationItemType.Application,
-                            RecommendedTier = a.RecommendedTier,
-                            EstimatedSizeBytes = a.EstimatedSizeBytes,
-                            SourceData = a
-                        }).ToList().AsReadOnly();
-                        break;
+                    var crossPlatform = host.Services.GetRequiredService<ICrossPlatformDiscoveryService>();
+                    var result = await crossPlatform.DiscoverAllAsync(sourcePath, ct);
 
-                    case "profiles":
-                        var profiles = await discovery.DiscoverUserProfilesAsync(ct);
-                        items = profiles.Select(p => new MigrationItem
+                    OutputFormatter.WritePlatformInfo(result.Platform, result.OsVersion);
+
+                    var migrationItems = new List<MigrationItem>();
+
+                    foreach (var app in result.Applications)
+                    {
+                        migrationItems.Add(new MigrationItem
                         {
-                            DisplayName = p.Username,
+                            DisplayName = app.Name,
+                            ItemType = MigrationItemType.Application,
+                            RecommendedTier = MigrationTier.Package,
+                            EstimatedSizeBytes = app.EstimatedSizeBytes,
+                            SourceData = app
+                        });
+                    }
+
+                    foreach (var profile in result.UserProfiles)
+                    {
+                        migrationItems.Add(new MigrationItem
+                        {
+                            DisplayName = profile.Username,
                             ItemType = MigrationItemType.UserProfile,
                             RecommendedTier = MigrationTier.Package,
-                            EstimatedSizeBytes = p.EstimatedSizeBytes,
-                            SourceData = p
-                        }).ToList().AsReadOnly();
-                        break;
+                            EstimatedSizeBytes = profile.EstimatedSizeBytes,
+                            SourceData = profile
+                        });
+                    }
 
-                    case "settings":
-                        var settings = await discovery.DiscoverSystemSettingsAsync(ct);
-                        items = settings.Select(s => new MigrationItem
-                        {
-                            DisplayName = s.Name,
-                            ItemType = MigrationItemType.SystemSetting,
-                            RecommendedTier = MigrationTier.Package,
-                            SourceData = s
-                        }).ToList().AsReadOnly();
-                        break;
+                    items = migrationItems.AsReadOnly();
+                }
+                else
+                {
+                    // Standard Windows discovery
+                    var discovery = host.Services.GetRequiredService<IDiscoveryService>();
 
-                    default:
-                        items = await discovery.DiscoverAllAsync(progress, ct);
-                        progress.Complete();
-                        break;
+                    switch (type.ToLowerInvariant())
+                    {
+                        case "apps":
+                        case "applications":
+                            var apps = await discovery.DiscoverApplicationsAsync(ct);
+                            items = apps.Select(a => new MigrationItem
+                            {
+                                DisplayName = a.Name,
+                                ItemType = MigrationItemType.Application,
+                                RecommendedTier = a.RecommendedTier,
+                                EstimatedSizeBytes = a.EstimatedSizeBytes,
+                                SourceData = a
+                            }).ToList().AsReadOnly();
+                            break;
+
+                        case "profiles":
+                            var profiles = await discovery.DiscoverUserProfilesAsync(ct);
+                            items = profiles.Select(p => new MigrationItem
+                            {
+                                DisplayName = p.Username,
+                                ItemType = MigrationItemType.UserProfile,
+                                RecommendedTier = MigrationTier.Package,
+                                EstimatedSizeBytes = p.EstimatedSizeBytes,
+                                SourceData = p
+                            }).ToList().AsReadOnly();
+                            break;
+
+                        case "settings":
+                            var settings = await discovery.DiscoverSystemSettingsAsync(ct);
+                            items = settings.Select(s => new MigrationItem
+                            {
+                                DisplayName = s.Name,
+                                ItemType = MigrationItemType.SystemSetting,
+                                RecommendedTier = MigrationTier.Package,
+                                SourceData = s
+                            }).ToList().AsReadOnly();
+                            break;
+
+                        default:
+                            items = await discovery.DiscoverAllAsync(progress, ct);
+                            progress.Complete();
+                            break;
+                    }
                 }
 
                 OutputFormatter.WriteDiscoveryResults(items, json);

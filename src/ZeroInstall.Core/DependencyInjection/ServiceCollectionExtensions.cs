@@ -27,6 +27,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDomainJoinService, DomainJoinService>();
         services.AddSingleton<IProfileReassignmentService, ProfileReassignmentService>();
 
+        // Platform detection
+        services.AddSingleton<IPlatformDetectionService, PlatformDetectionService>();
+        services.AddTransient<ICrossPlatformDiscoveryService, CrossPlatformDiscoveryService>();
+
         // Discovery (transient)
         services.AddTransient<ApplicationDiscoveryService>();
         services.AddTransient<UserProfileDiscoveryService>();

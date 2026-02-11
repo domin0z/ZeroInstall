@@ -40,6 +40,26 @@ public class DiscoveredApplication
     public string? ChocolateyPackageId { get; set; }
 
     /// <summary>
+    /// Homebrew cask ID if matched (macOS), null otherwise.
+    /// </summary>
+    public string? BrewCaskId { get; set; }
+
+    /// <summary>
+    /// APT package name if matched (Linux Debian/Ubuntu), null otherwise.
+    /// </summary>
+    public string? AptPackageName { get; set; }
+
+    /// <summary>
+    /// Snap package name if matched (Linux), null otherwise.
+    /// </summary>
+    public string? SnapPackageName { get; set; }
+
+    /// <summary>
+    /// Flatpak application ID if matched (Linux), null otherwise.
+    /// </summary>
+    public string? FlatpakAppId { get; set; }
+
+    /// <summary>
     /// Estimated total size in bytes (Program Files + AppData).
     /// </summary>
     public long EstimatedSizeBytes { get; set; }

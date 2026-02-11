@@ -47,6 +47,9 @@ public interface ISessionState
     // Domain migration configuration
     DomainMigrationConfiguration? DomainMigrationConfig { get; set; }
 
+    // Cross-platform source
+    string SourcePath { get; set; }
+
     /// <summary>
     /// Clears all state for a new migration.
     /// </summary>

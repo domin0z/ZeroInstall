@@ -47,6 +47,9 @@ internal sealed class SessionState : ISessionState
     // Domain migration configuration
     public DomainMigrationConfiguration? DomainMigrationConfig { get; set; }
 
+    // Cross-platform source
+    public string SourcePath { get; set; } = string.Empty;
+
     public void Reset()
     {
         Role = default;
@@ -75,5 +78,6 @@ internal sealed class SessionState : ISessionState
         BluetoothIsServer = false;
         IncludeBcdBackup = true;
         DomainMigrationConfig = null;
+        SourcePath = string.Empty;
     }
 }

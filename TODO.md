@@ -384,9 +384,27 @@
   - [x] UserMappingEntryViewModel — DomainWarning, ShowDomainWarning, PostMigrationAction, ReassignInPlace, ShowDomainOptions
 - [x] Write tests (94 new, 1152 total)
 
+## Phase 21: Cross-Platform Source Discovery ✅
+- [x] SourcePlatform enum (Unknown, Windows, MacOs, Linux)
+- [x] IPlatformDetectionService + PlatformDetectionService (filesystem marker detection)
+- [x] IFileSystemAccessor: ReadAllText + ReadAllLines extensions
+- [x] DiscoveredApplication: BrewCaskId, AptPackageName, SnapPackageName, FlatpakAppId
+- [x] MacOsUserProfileDiscoveryService (/Users/ enumeration, Safari/Chrome/Firefox/Edge, Outlook/Thunderbird/Apple Mail)
+- [x] MacOsApplicationDiscoveryService (/Applications/ .app bundles, Info.plist parsing, Homebrew Cellar + Caskroom)
+- [x] LinuxUserProfileDiscoveryService (/etc/passwd parsing, XDG folders, Chrome/Firefox/Chromium, Thunderbird/Evolution)
+- [x] LinuxApplicationDiscoveryService (.desktop files, dpkg/status, snap, flatpak)
+- [x] ICrossPlatformDiscoveryService + CrossPlatformDiscoveryService (orchestrator)
+- [x] DI registration (IPlatformDetectionService + ICrossPlatformDiscoveryService)
+- [x] CLI: --source-path option on discover + capture commands
+- [x] CLI: OutputFormatter.WritePlatformInfo
+- [x] CLI: Cross-platform tier validation (Tier 2/3 blocked for non-Windows sources)
+- [x] WPF: Source path picker, platform detection banner (teal), limitation warning (amber)
+- [x] WPF: CaptureConfigViewModel + SessionState source path support
+- [x] Write tests (95 new, 1247 total)
+
 ## Future Considerations (Post-v1.0)
 - [ ] Central web dashboard for job tracking and backup monitoring across all technicians/customers
-- [ ] macOS/Linux source support (read data from non-Windows drives)
+- [x] macOS/Linux source support (Phase 21: cross-platform discovery, 95 new tests — 1247 total)
 - [x] Active Directory / domain profile migration (Phase 20: ForensIT-grade domain migration, 94 new tests — 1152 total)
 - [x] BitLocker-encrypted volume handling (Phase 17: enum, model, service, CLI commands, WPF warning, 79 new tests — 951 total)
 - [x] Bluetooth transport for nearby transfers (Phase 18: IBluetoothAdapter, BluetoothTransport, CLI + WPF, 56 new tests — 1007 total)

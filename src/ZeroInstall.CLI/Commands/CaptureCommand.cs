@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using ZeroInstall.CLI.Infrastructure;
+using ZeroInstall.Core.Discovery;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
 using ZeroInstall.Core.Services;
@@ -102,12 +103,17 @@ internal static class CaptureCommand
             Description = "Run as Bluetooth server (listen for incoming connection)"
         };
 
+        var sourcePathOption = new Option<string?>("--source-path")
+        {
+            Description = "Path to mounted foreign drive (macOS/Linux) for cross-platform capture"
+        };
+
         var command = new Command("capture", "Capture data from this machine for migration")
         {
             outputOption, tierOption, profileOption, allOption, volumeOption, formatOption,
             sftpHostOption, sftpPortOption, sftpUserOption, sftpPassOption, sftpKeyOption,
             sftpPathOption, encryptOption, noCompressOption,
-            btAddressOption, btServerOption
+            btAddressOption, btServerOption, sourcePathOption
         };
 
         command.SetAction(async (parseResult, ct) =>
@@ -129,8 +135,9 @@ internal static class CaptureCommand
             var encryptPassphrase = parseResult.GetValue(encryptOption);
             var noCompress = parseResult.GetValue(noCompressOption);
 
+            var sourcePath = parseResult.GetValue(sourcePathOption);
+
             using var host = CliHost.BuildHost(verbose);
-            var discovery = host.Services.GetRequiredService<IDiscoveryService>();
             var jobLogger = host.Services.GetRequiredService<IJobLogger>();
             var profileManager = host.Services.GetRequiredService<IProfileManager>();
             var progress = new ConsoleProgressReporter();
@@ -139,8 +146,51 @@ internal static class CaptureCommand
             {
                 // Discover items
                 Console.Error.WriteLine("Discovering items...");
-                var items = await discovery.DiscoverAllAsync(progress, ct);
+
+                IReadOnlyList<MigrationItem> discoveredItems;
+                SourcePlatform detectedPlatform = SourcePlatform.Windows;
+
+                if (!string.IsNullOrEmpty(sourcePath))
+                {
+                    var crossPlatform = host.Services.GetRequiredService<ICrossPlatformDiscoveryService>();
+                    var result = await crossPlatform.DiscoverAllAsync(sourcePath, ct);
+                    detectedPlatform = result.Platform;
+
+                    OutputFormatter.WritePlatformInfo(result.Platform, result.OsVersion);
+
+                    var migrationItems = new List<MigrationItem>();
+                    foreach (var app in result.Applications)
+                    {
+                        migrationItems.Add(new MigrationItem
+                        {
+                            DisplayName = app.Name,
+                            ItemType = MigrationItemType.Application,
+                            RecommendedTier = MigrationTier.Package,
+                            EstimatedSizeBytes = app.EstimatedSizeBytes,
+                            SourceData = app
+                        });
+                    }
+                    foreach (var profile in result.UserProfiles)
+                    {
+                        migrationItems.Add(new MigrationItem
+                        {
+                            DisplayName = profile.Username,
+                            ItemType = MigrationItemType.UserProfile,
+                            RecommendedTier = MigrationTier.Package,
+                            EstimatedSizeBytes = profile.EstimatedSizeBytes,
+                            SourceData = profile
+                        });
+                    }
+                    discoveredItems = migrationItems.AsReadOnly();
+                }
+                else
+                {
+                    var discovery = host.Services.GetRequiredService<IDiscoveryService>();
+                    discoveredItems = await discovery.DiscoverAllAsync(progress, ct);
+                }
+
                 progress.Complete();
+                var items = discoveredItems;
                 Console.Error.WriteLine($"Found {items.Count} items.");
 
                 // Apply profile or select all
@@ -180,6 +230,30 @@ internal static class CaptureCommand
 
                 var effectiveTier = ParseTier(tier);
                 Directory.CreateDirectory(output);
+
+                // Cross-platform sources only support Tier 1 (package) migration
+                if (detectedPlatform != SourcePlatform.Windows && detectedPlatform != SourcePlatform.Unknown)
+                {
+                    if (effectiveTier == MigrationTier.FullClone)
+                    {
+                        Console.Error.WriteLine("WARNING: Full disk clone is not supported for cross-platform sources. " +
+                                                "Only package-based migration and profile/file transfer are available.");
+                        job.Status = JobStatus.Failed;
+                        job.CompletedUtc = DateTime.UtcNow;
+                        await jobLogger.UpdateJobAsync(job, ct);
+                        return 1;
+                    }
+
+                    if (effectiveTier == MigrationTier.RegistryFile)
+                    {
+                        Console.Error.WriteLine("WARNING: Registry capture is not supported for cross-platform sources. " +
+                                                "Only package-based migration and profile/file transfer are available.");
+                        job.Status = JobStatus.Failed;
+                        job.CompletedUtc = DateTime.UtcNow;
+                        await jobLogger.UpdateJobAsync(job, ct);
+                        return 1;
+                    }
+                }
 
                 if (effectiveTier == MigrationTier.FullClone)
                 {

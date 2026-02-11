@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Discovery;
 
 namespace ZeroInstall.CLI.Infrastructure;
 
@@ -321,6 +322,24 @@ internal static class OutputFormatter
         }
 
         Console.WriteLine(success ? $"SUCCESS: {message}" : $"FAILED: {message}");
+    }
+
+    public static void WritePlatformInfo(SourcePlatform platform, string? osVersion)
+    {
+        var platformName = platform switch
+        {
+            SourcePlatform.MacOs => "macOS",
+            SourcePlatform.Linux => "Linux",
+            SourcePlatform.Windows => "Windows",
+            _ => "Unknown"
+        };
+
+        var display = !string.IsNullOrEmpty(osVersion)
+            ? $"{platformName} {osVersion}"
+            : platformName;
+
+        Console.WriteLine($"Source Platform: {display}");
+        Console.WriteLine();
     }
 
     public static string FormatBytes(long bytes)

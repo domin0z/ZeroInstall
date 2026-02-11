@@ -11,6 +11,8 @@ public interface IFileSystemAccessor
     string[] GetFiles(string path, string searchPattern = "*", SearchOption searchOption = SearchOption.TopDirectoryOnly);
     long GetDirectorySize(string path);
     long GetFileSize(string path);
+    string ReadAllText(string path);
+    string[] ReadAllLines(string path);
 }
 
 /// <summary>
@@ -56,5 +58,17 @@ public class WindowsFileSystemAccessor : IFileSystemAccessor
     {
         try { return new FileInfo(path).Length; }
         catch { return 0; }
+    }
+
+    public string ReadAllText(string path)
+    {
+        try { return File.ReadAllText(path); }
+        catch { return string.Empty; }
+    }
+
+    public string[] ReadAllLines(string path)
+    {
+        try { return File.ReadAllLines(path); }
+        catch { return []; }
     }
 }

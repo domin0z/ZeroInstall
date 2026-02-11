@@ -36,6 +36,58 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
             <StackPanel MaxWidth="600" HorizontalAlignment="Left">
 
+                <!-- Cross-Platform Source Path Picker -->
+                <TextBlock Text="Source Drive (optional)"
+                           Style="{StaticResource SubheaderText}"
+                           Margin="0,0,0,8" />
+                <TextBlock Text="Leave empty for local Windows discovery, or browse to a mounted macOS/Linux drive."
+                           FontSize="11"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="0,0,0,6" />
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0"
+                             Text="{Binding SourcePath, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="8,6"
+                             FontSize="13"
+                             VerticalContentAlignment="Center" />
+                    <Button Grid.Column="1"
+                            Content="Browse"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding BrowseSourceCommand}"
+                            Padding="12,6"
+                            Margin="8,0,0,0" />
+                </Grid>
+
+                <!-- Platform Detection Banner (teal) -->
+                <Border Background="#E0F2F7"
+                        BorderBrush="{StaticResource PrimaryTealBrush}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="14,10"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding ShowPlatformBanner, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding DetectedPlatformDisplay}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryDarkBrush}" />
+                </Border>
+
+                <!-- Cross-Platform Limitation Warning (amber) -->
+                <Border Background="#FFF3E0"
+                        BorderBrush="#F57C00"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="14,10"
+                        Margin="0,0,0,16"
+                        Visibility="{Binding ShowCrossPlatformWarning, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding CrossPlatformWarning}"
+                               FontSize="12"
+                               Foreground="#E65100"
+                               TextWrapping="Wrap" />
+                </Border>
+
                 <!-- BitLocker Warning Banner -->
                 <Border Background="#FFF3E0"
                         BorderBrush="#F57C00"
