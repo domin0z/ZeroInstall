@@ -402,9 +402,43 @@
 - [x] WPF: CaptureConfigViewModel + SessionState source path support
 - [x] Write tests (95 new, 1247 total)
 
+## Phase 22: Central Web Dashboard for Job Tracking & Backup Monitoring ✅
+- [x] **Project scaffolding:**
+  - [x] ZeroInstall.Dashboard (Blazor Server, ASP.NET Core 8, EF Core SQLite) — `zim-dashboard`
+  - [x] ZeroInstall.Dashboard.Tests (xUnit, FluentAssertions, NSubstitute, EF Core InMemory)
+  - [x] Solution file updated with both projects
+- [x] **Data layer:**
+  - [x] DashboardDbContext (SQLite, 4 DbSets: Jobs, Reports, BackupStatuses, Alerts)
+  - [x] Entity models: JobRecord, JobReportRecord, BackupStatusRecord, AlertRecord (raw JSON + denormalized fields)
+  - [x] DashboardConfiguration (NAS connection, API key, scan interval, listen port)
+- [x] **Services:**
+  - [x] IDashboardDataService / DashboardDataService (CRUD, upsert, stats, pagination)
+  - [x] IAlertService / AlertService (JobFailed, BackupOverdue >48h, QuotaWarning >90%, auto-dismiss on recovery)
+  - [x] INasScannerService / NasScannerService (SFTP-based NAS polling, backup-status.json parsing)
+  - [x] NasScannerBackgroundService (IHostedService, configurable interval)
+- [x] **REST API + Auth:**
+  - [x] ApiKeyAuthHandler (X-Api-Key header validation)
+  - [x] JobsController (POST/GET /api/jobs, GET /api/jobs/{id})
+  - [x] ReportsController (POST /api/reports, GET /api/reports/{jobId})
+  - [x] BackupStatusController (POST/GET /api/backup-status)
+- [x] **SignalR:**
+  - [x] DashboardHub (JobUpdated, BackupStatusChanged, AlertCreated, StatsChanged)
+- [x] **Blazor pages:**
+  - [x] MainLayout (CCNNY teal gradient sidebar, nav links)
+  - [x] Dashboard (KPI cards, recent jobs table, backup health, active alerts)
+  - [x] Jobs (filtered/paginated table, status badges, click-to-detail)
+  - [x] JobDetail (full job info, report data, raw JSON expandable)
+  - [x] Backups (customer cards, health indicators, quota progress bars)
+  - [x] Settings (NAS config, test connection, API key, scan interval)
+- [x] **CLI integration:**
+  - [x] DashboardClient (HttpClient wrapper, fire-and-forget push)
+  - [x] `zim capture --dashboard-url --api-key` options
+  - [x] `zim restore --dashboard-url --api-key` options
+- [x] Write tests (69 new, 1316 total)
+
 ## Future Considerations (Post-v1.0)
-- [ ] Central web dashboard for job tracking and backup monitoring across all technicians/customers
-- [x] macOS/Linux source support (Phase 21: cross-platform discovery, 95 new tests — 1247 total)
+- [x] Central web dashboard for job tracking and backup monitoring across all technicians/customers (Phase 22: Blazor Server dashboard, 69 new tests -- 1316 total)
+- [x] macOS/Linux source support (Phase 21: cross-platform discovery, 95 new tests -- 1247 total)
 - [x] Active Directory / domain profile migration (Phase 20: ForensIT-grade domain migration, 94 new tests — 1152 total)
 - [x] BitLocker-encrypted volume handling (Phase 17: enum, model, service, CLI commands, WPF warning, 79 new tests — 951 total)
 - [x] Bluetooth transport for nearby transfers (Phase 18: IBluetoothAdapter, BluetoothTransport, CLI + WPF, 56 new tests — 1007 total)

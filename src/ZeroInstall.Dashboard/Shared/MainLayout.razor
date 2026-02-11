@@ -1,0 +1,20 @@
+@inherits LayoutComponentBase
+@inject IDashboardDataService DataService
+
+<div class="layout">
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>ZeroInstall</h2>
+            <small>Migration Dashboard</small>
+        </div>
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">Dashboard</NavLink>
+        <NavLink class="nav-link" href="jobs">Jobs</NavLink>
+        <NavLink class="nav-link" href="backups">
+            Backups
+        </NavLink>
+        <NavLink class="nav-link" href="settings">Settings</NavLink>
+    </nav>
+    <main class="content">
+        @Body
+    </main>
+</div>

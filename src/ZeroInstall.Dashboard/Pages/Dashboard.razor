@@ -1,0 +1,134 @@
+@page "/"
+@inject IDashboardDataService DataService
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<h1 class="page-title">Dashboard</h1>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-value">@stats.TotalJobs</div>
+        <div class="kpi-label">Total Jobs</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-value" style="color: #1565c0;">@stats.ActiveJobs</div>
+        <div class="kpi-label">Active Now</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-value" style="color: #1e7e34;">@(stats.TotalJobs > 0 ? $"{(double)stats.CompletedJobs / stats.TotalJobs * 100:F0}%" : "N/A")</div>
+        <div class="kpi-label">Success Rate</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-value" style="color: #e65100;">@stats.ActiveAlerts</div>
+        <div class="kpi-label">Active Alerts</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 12px;">Recent Jobs</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Job ID</th>
+                <th>Source</th>
+                <th>Destination</th>
+                <th>Technician</th>
+                <th>Status</th>
+                <th>Items</th>
+                <th>Started</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var job in recentJobs)
+            {
+                <tr style="cursor:pointer" @onclick="() => GoToJob(job.JobId)">
+                    <td><code>@job.JobId[..Math.Min(8, job.JobId.Length)]</code></td>
+                    <td>@(job.SourceHostname ?? "-")</td>
+                    <td>@(job.DestinationHostname ?? "-")</td>
+                    <td>@(job.TechnicianName ?? "-")</td>
+                    <td><span class="badge @GetStatusBadgeClass(job.Status)">@job.Status</span></td>
+                    <td>@job.CompletedItems/@job.TotalItems</td>
+                    <td>@(job.StartedUtc?.ToString("g") ?? "-")</td>
+                </tr>
+            }
+            @if (!recentJobs.Any())
+            {
+                <tr><td colspan="7" style="text-align:center; color:#999;">No jobs yet</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="card">
+        <h3 style="margin-bottom: 12px;">Backup Health</h3>
+        <p><span class="health-dot health-green"></span> @stats.HealthyBackups healthy</p>
+        <p><span class="health-dot health-red"></span> @stats.OverdueBackups overdue</p>
+        <p style="margin-top: 8px; font-size: 13px; color: #666;">@stats.TotalCustomers total customers</p>
+    </div>
+    <div class="card">
+        <h3 style="margin-bottom: 12px;">Active Alerts</h3>
+        @foreach (var alert in alerts)
+        {
+            <div class="alert-panel">
+                <span>@alert.Message</span>
+                <button class="btn btn-sm" @onclick="() => DismissAlert(alert.Id)">Dismiss</button>
+            </div>
+        }
+        @if (!alerts.Any())
+        {
+            <p style="color: #999;">No active alerts</p>
+        }
+    </div>
+</div>
+
+@code {
+    private DashboardStats stats = new();
+    private List<JobRecord> recentJobs = new();
+    private List<AlertRecord> alerts = new();
+    private HubConnection? hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/hubs/dashboard"))
+            .Build();
+
+        hubConnection.On<string, string>("JobUpdated", async (_, _) => { await LoadData(); await InvokeAsync(StateHasChanged); });
+        hubConnection.On<string>("BackupStatusChanged", async _ => { await LoadData(); await InvokeAsync(StateHasChanged); });
+        hubConnection.On<DashboardStats>("StatsChanged", async s => { stats = s; await InvokeAsync(StateHasChanged); });
+
+        try { await hubConnection.StartAsync(); } catch { }
+    }
+
+    private async Task LoadData()
+    {
+        stats = await DataService.GetStatsAsync();
+        recentJobs = await DataService.ListJobsAsync(take: 10);
+        alerts = await DataService.GetActiveAlertsAsync();
+    }
+
+    private async Task DismissAlert(int alertId)
+    {
+        await DataService.DismissAlertAsync(alertId);
+        alerts = await DataService.GetActiveAlertsAsync();
+    }
+
+    private void GoToJob(string jobId) => Navigation.NavigateTo($"jobs/{jobId}");
+
+    private static string GetStatusBadgeClass(string status) => status switch
+    {
+        "Completed" => "badge-green",
+        "InProgress" => "badge-blue",
+        "Failed" => "badge-red",
+        _ => "badge-gray"
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+            await hubConnection.DisposeAsync();
+    }
+}

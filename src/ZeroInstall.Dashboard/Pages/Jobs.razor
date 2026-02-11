@@ -1,0 +1,106 @@
+@page "/jobs"
+@inject IDashboardDataService DataService
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<h1 class="page-title">Migration Jobs</h1>
+
+<div class="card" style="margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-end;">
+    <div class="form-group" style="margin-bottom: 0;">
+        <label>Status</label>
+        <select @bind="statusFilter" @bind:after="LoadJobs">
+            <option value="">All</option>
+            <option value="Completed">Completed</option>
+            <option value="InProgress">In Progress</option>
+            <option value="Failed">Failed</option>
+            <option value="Pending">Pending</option>
+        </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 0;">
+        <label>Technician</label>
+        <input @bind="technicianFilter" @bind:event="oninput" @bind:after="LoadJobs" placeholder="Search..." />
+    </div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Job ID</th>
+                <th>Source</th>
+                <th>Destination</th>
+                <th>Technician</th>
+                <th>Status</th>
+                <th>Items</th>
+                <th>Started</th>
+                <th>Duration</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var job in jobs)
+            {
+                <tr style="cursor:pointer" @onclick="() => GoToJob(job.JobId)">
+                    <td><code>@job.JobId[..Math.Min(8, job.JobId.Length)]</code></td>
+                    <td>@(job.SourceHostname ?? "-")</td>
+                    <td>@(job.DestinationHostname ?? "-")</td>
+                    <td>@(job.TechnicianName ?? "-")</td>
+                    <td><span class="badge @GetBadge(job.Status)">@job.Status</span></td>
+                    <td>@job.CompletedItems/@job.TotalItems</td>
+                    <td>@(job.StartedUtc?.ToString("g") ?? "-")</td>
+                    <td>@GetDuration(job)</td>
+                </tr>
+            }
+            @if (!jobs.Any())
+            {
+                <tr><td colspan="8" style="text-align:center; color:#999;">No jobs found</td></tr>
+            }
+        </tbody>
+    </table>
+    @if (totalJobs > pageSize)
+    {
+        <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center;">
+            <button class="btn btn-sm btn-primary" disabled="@(currentPage == 0)" @onclick="PrevPage">Previous</button>
+            <span style="line-height: 28px; font-size: 13px;">Page @(currentPage + 1) of @((totalJobs + pageSize - 1) / pageSize)</span>
+            <button class="btn btn-sm btn-primary" disabled="@((currentPage + 1) * pageSize >= totalJobs)" @onclick="NextPage">Next</button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<JobRecord> jobs = new();
+    private string statusFilter = "";
+    private string technicianFilter = "";
+    private int currentPage;
+    private int totalJobs;
+    private const int pageSize = 20;
+    private HubConnection? hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobs();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/hubs/dashboard"))
+            .Build();
+        hubConnection.On<string, string>("JobUpdated", async (_, _) => { await LoadJobs(); await InvokeAsync(StateHasChanged); });
+        try { await hubConnection.StartAsync(); } catch { }
+    }
+
+    private async Task LoadJobs()
+    {
+        var status = string.IsNullOrEmpty(statusFilter) ? null : statusFilter;
+        var tech = string.IsNullOrEmpty(technicianFilter) ? null : technicianFilter;
+        jobs = await DataService.ListJobsAsync(status, tech, currentPage * pageSize, pageSize);
+        totalJobs = await DataService.GetJobCountAsync(status);
+    }
+
+    private async Task PrevPage() { currentPage--; await LoadJobs(); }
+    private async Task NextPage() { currentPage++; await LoadJobs(); }
+
+    private void GoToJob(string jobId) => Navigation.NavigateTo($"jobs/{jobId}");
+    private static string GetBadge(string s) => s switch { "Completed" => "badge-green", "InProgress" => "badge-blue", "Failed" => "badge-red", _ => "badge-gray" };
+    private static string GetDuration(JobRecord j) => j.StartedUtc.HasValue && j.CompletedUtc.HasValue
+        ? (j.CompletedUtc.Value - j.StartedUtc.Value).ToString(@"hh\:mm\:ss") : "-";
+
+    public async ValueTask DisposeAsync() { if (hubConnection is not null) await hubConnection.DisposeAsync(); }
+}

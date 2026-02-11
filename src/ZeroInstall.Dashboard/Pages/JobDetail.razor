@@ -1,0 +1,87 @@
+@page "/jobs/{JobId}"
+@inject IDashboardDataService DataService
+@inject NavigationManager Navigation
+
+<h1 class="page-title">Job Detail</h1>
+
+@if (job is null)
+{
+    <div class="card"><p>Job not found.</p></div>
+}
+else
+{
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <h3>Job @job.JobId</h3>
+                <span class="badge @GetBadge(job.Status)" style="margin-top: 4px;">@job.Status</span>
+            </div>
+            <button class="btn btn-sm" @onclick="GoBack">Back to Jobs</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+                <p><strong>Source:</strong> @(job.SourceHostname ?? "-")</p>
+                <p><strong>Destination:</strong> @(job.DestinationHostname ?? "-")</p>
+                <p><strong>Technician:</strong> @(job.TechnicianName ?? "-")</p>
+            </div>
+            <div>
+                <p><strong>Started:</strong> @(job.StartedUtc?.ToString("G") ?? "-")</p>
+                <p><strong>Completed:</strong> @(job.CompletedUtc?.ToString("G") ?? "-")</p>
+                <p><strong>Duration:</strong> @GetDuration()</p>
+            </div>
+        </div>
+
+        <div class="kpi-grid" style="margin-bottom: 16px;">
+            <div class="kpi-card"><div class="kpi-value">@job.TotalItems</div><div class="kpi-label">Total Items</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#1e7e34;">@job.CompletedItems</div><div class="kpi-label">Completed</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#c62828;">@job.FailedItems</div><div class="kpi-label">Failed</div></div>
+            <div class="kpi-card"><div class="kpi-value">@FormatBytes(job.TotalBytesTransferred)</div><div class="kpi-label">Transferred</div></div>
+        </div>
+    </div>
+
+    @if (report is not null)
+    {
+        <div class="card">
+            <h3 style="margin-bottom: 12px;">Report</h3>
+            <p><strong>Report ID:</strong> @report.ReportId</p>
+            <p><strong>Final Status:</strong> @report.FinalStatus</p>
+            <p><strong>Generated:</strong> @report.GeneratedUtc.ToString("G")</p>
+        </div>
+    }
+
+    <div class="card">
+        <details>
+            <summary style="cursor:pointer; font-weight: 600;">Raw JSON</summary>
+            <pre style="margin-top: 8px; padding: 12px; background: var(--surface); border-radius: 6px; overflow-x: auto; font-size: 12px;">@job.RawJson</pre>
+        </details>
+    </div>
+}
+
+@code {
+    [Parameter] public string JobId { get; set; } = "";
+    private JobRecord? job;
+    private JobReportRecord? report;
+
+    private void GoBack() => Navigation.NavigateTo("jobs");
+
+    protected override async Task OnInitializedAsync()
+    {
+        job = await DataService.GetJobAsync(JobId);
+        if (job is not null)
+            report = await DataService.GetReportByJobIdAsync(JobId);
+    }
+
+    private string GetDuration() => job?.StartedUtc != null && job.CompletedUtc != null
+        ? (job.CompletedUtc.Value - job.StartedUtc.Value).ToString(@"hh\:mm\:ss") : "-";
+
+    private static string GetBadge(string s) => s switch { "Completed" => "badge-green", "InProgress" => "badge-blue", "Failed" => "badge-red", _ => "badge-gray" };
+
+    private static string FormatBytes(long bytes) => bytes switch
+    {
+        >= 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024 * 1024):F1} GB",
+        >= 1024L * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+        >= 1024L => $"{bytes / 1024.0:F1} KB",
+        _ => $"{bytes} B"
+    };
+}

@@ -1,0 +1,89 @@
+@page "/settings"
+@inject DashboardConfiguration Config
+@inject INasScannerService NasScanner
+
+<h1 class="page-title">Settings</h1>
+
+<div class="card">
+    <h3 style="margin-bottom: 16px;">NAS Connection</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+            <label>SFTP Host</label>
+            <input @bind="Config.NasSftpHost" />
+        </div>
+        <div class="form-group">
+            <label>Port</label>
+            <input type="number" @bind="Config.NasSftpPort" />
+        </div>
+        <div class="form-group">
+            <label>Username</label>
+            <input @bind="Config.NasSftpUser" />
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" @bind="Config.NasSftpPassword" />
+        </div>
+        <div class="form-group">
+            <label>SSH Key Path</label>
+            <input @bind="Config.NasSftpKeyPath" />
+        </div>
+        <div class="form-group">
+            <label>Base Path</label>
+            <input @bind="Config.NasSftpBasePath" />
+        </div>
+    </div>
+    <button class="btn btn-primary" @onclick="TestConnection" style="margin-top: 8px;">
+        @(testResult is null ? "Test Connection" : testResult)
+    </button>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 16px;">Scan Settings</h3>
+    <div class="form-group">
+        <label>Scan Interval (minutes)</label>
+        <input type="number" @bind="Config.NasScanIntervalMinutes" min="1" max="60" />
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 16px;">API Authentication</h3>
+    <div class="form-group">
+        <label>API Key</label>
+        <div style="display: flex; gap: 8px;">
+            <input value="@Config.ApiKey" readonly style="flex: 1; font-family: monospace;" />
+            <button class="btn btn-accent btn-sm" @onclick="RegenerateApiKey">Regenerate</button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 16px;">Dashboard</h3>
+    <div class="form-group">
+        <label>Listen Port</label>
+        <input type="number" @bind="Config.ListenPort" />
+    </div>
+    <p style="font-size: 12px; color: #666;">Port changes require a restart.</p>
+</div>
+
+@code {
+    private string? testResult;
+
+    private async Task TestConnection()
+    {
+        testResult = "Testing...";
+        try
+        {
+            await NasScanner.ScanAsync();
+            testResult = "Connected!";
+        }
+        catch
+        {
+            testResult = "Connection failed";
+        }
+    }
+
+    private void RegenerateApiKey()
+    {
+        Config.ApiKey = Guid.NewGuid().ToString("N");
+    }
+}

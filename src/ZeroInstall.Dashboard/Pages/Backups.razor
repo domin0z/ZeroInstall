@@ -1,0 +1,87 @@
+@page "/backups"
+@inject IDashboardDataService DataService
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<h1 class="page-title">Customer Backups</h1>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+    @foreach (var status in statuses)
+    {
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <h3 style="font-size: 16px;">@status.CustomerId</h3>
+                    <small style="color: #666;">@(status.MachineName ?? "Unknown")</small>
+                </div>
+                <span class="health-dot @GetHealthClass(status)"></span>
+            </div>
+
+            <p style="font-size: 13px;"><strong>Last Backup:</strong> @(status.LastBackupUtc?.ToString("g") ?? "Never")</p>
+            <p style="font-size: 13px;"><strong>Next Scheduled:</strong> @(status.NextScheduledUtc?.ToString("g") ?? "N/A")</p>
+            <p style="font-size: 13px;"><strong>Status:</strong>
+                <span class="badge @GetResultBadge(status.LastRunResult)">@(status.LastRunResult ?? "Unknown")</span>
+            </p>
+
+            @if (status.QuotaBytes > 0)
+            {
+                var pct = (double)status.NasUsageBytes / status.QuotaBytes * 100;
+                <div style="margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+                        <span>Storage</span>
+                        <span>@FormatBytes(status.NasUsageBytes) / @FormatBytes(status.QuotaBytes) (@($"{pct:F0}%"))</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: @($"{Math.Min(pct, 100):F0}%"); background: @(pct > 90 ? "#f44336" : pct > 70 ? "#ff9800" : "#4caf50");"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    @if (!statuses.Any())
+    {
+        <div class="card"><p style="color: #999;">No backup agents reporting yet</p></div>
+    }
+</div>
+
+@code {
+    private List<BackupStatusRecord> statuses = new();
+    private HubConnection? hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        statuses = await DataService.ListBackupStatusesAsync();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/hubs/dashboard"))
+            .Build();
+        hubConnection.On<string>("BackupStatusChanged", async _ => { statuses = await DataService.ListBackupStatusesAsync(); await InvokeAsync(StateHasChanged); });
+        try { await hubConnection.StartAsync(); } catch { }
+    }
+
+    private static string GetHealthClass(BackupStatusRecord s)
+    {
+        if (s.LastBackupUtc is null) return "health-red";
+        var age = DateTime.UtcNow - s.LastBackupUtc.Value;
+        if (age.TotalHours <= 24) return "health-green";
+        if (age.TotalHours <= 48) return "health-amber";
+        return "health-red";
+    }
+
+    private static string GetResultBadge(string? result) => result switch
+    {
+        "Success" => "badge-green",
+        "Failed" => "badge-red",
+        "PartialSuccess" => "badge-amber",
+        _ => "badge-gray"
+    };
+
+    private static string FormatBytes(long bytes) => bytes switch
+    {
+        >= 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024 * 1024):F1} GB",
+        >= 1024L * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+        _ => $"{bytes / 1024.0:F1} KB"
+    };
+
+    public async ValueTask DisposeAsync() { if (hubConnection is not null) await hubConnection.DisposeAsync(); }
+}

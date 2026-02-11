@@ -89,12 +89,23 @@ internal static class RestoreCommand
             Description = "Run as Bluetooth server (listen for incoming connection)"
         };
 
+        var dashboardUrlOption = new Option<string?>("--dashboard-url")
+        {
+            Description = "Dashboard base URL to push job data to (e.g., http://server:5180)"
+        };
+
+        var apiKeyOption = new Option<string?>("--api-key")
+        {
+            Description = "API key for dashboard authentication"
+        };
+
         var command = new Command("restore", "Restore captured data to this machine")
         {
             inputOption, userMapOption, createUsersOption,
             sftpHostOption, sftpPortOption, sftpUserOption, sftpPassOption, sftpKeyOption,
             sftpPathOption, encryptOption, noCompressOption,
-            btAddressOption, btServerOption
+            btAddressOption, btServerOption,
+            dashboardUrlOption, apiKeyOption
         };
 
         command.SetAction(async (parseResult, ct) =>
@@ -112,6 +123,8 @@ internal static class RestoreCommand
             var sftpPath = parseResult.GetValue(sftpPathOption) ?? "/backups/zim";
             var encryptPassphrase = parseResult.GetValue(encryptOption);
             var noCompress = parseResult.GetValue(noCompressOption);
+            var dashboardUrl = parseResult.GetValue(dashboardUrlOption);
+            var apiKey = parseResult.GetValue(apiKeyOption);
 
             using var host = CliHost.BuildHost(verbose);
             var jobLogger = host.Services.GetRequiredService<IJobLogger>();
@@ -200,6 +213,15 @@ internal static class RestoreCommand
                 job.Status = JobStatus.Completed;
                 job.CompletedUtc = DateTime.UtcNow;
                 await jobLogger.UpdateJobAsync(job, ct);
+
+                // Push to dashboard if configured
+                if (!string.IsNullOrEmpty(dashboardUrl) && !string.IsNullOrEmpty(apiKey))
+                {
+                    using var dashboard = new DashboardClient(dashboardUrl, apiKey);
+                    await dashboard.PushJobAsync(job, ct);
+                    var report = await jobLogger.GenerateReportAsync(job.JobId, ct);
+                    await dashboard.PushReportAsync(report, ct);
+                }
 
                 if (json)
                     OutputFormatter.WriteJobDetail(job, true);

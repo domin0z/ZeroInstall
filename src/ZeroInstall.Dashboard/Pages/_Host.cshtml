@@ -1,0 +1,71 @@
+@page "/"
+@namespace ZeroInstall.Dashboard.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZeroInstall Dashboard</title>
+    <base href="~/" />
+    <style>
+        :root {
+            --primary: #1088A1;
+            --primary-dark: #0E4D6C;
+            --accent: #F58850;
+            --bg: #FFFFFF;
+            --surface: #F5F5F5;
+            --border: #E8E8E8;
+            --text-primary: #24282D;
+            --text-secondary: #333333;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-primary); background: var(--surface); }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 240px; background: linear-gradient(180deg, var(--primary), var(--primary-dark)); color: white; padding: 0; flex-shrink: 0; }
+        .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+        .sidebar-header h2 { font-size: 18px; font-weight: 600; }
+        .sidebar-header small { font-size: 12px; opacity: 0.7; }
+        .nav-link { display: block; padding: 12px 20px; color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px; border-left: 3px solid transparent; transition: all 0.2s; }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: rgba(255,255,255,0.15); color: white; border-left-color: var(--accent); }
+        .content { flex: 1; padding: 24px; overflow-x: auto; }
+        .page-title { font-size: 24px; font-weight: 600; margin-bottom: 20px; color: var(--text-primary); }
+        .card { background: white; border-radius: 8px; border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { background: white; border-radius: 8px; border: 1px solid var(--border); padding: 16px; text-align: center; }
+        .kpi-value { font-size: 28px; font-weight: 700; color: var(--primary); }
+        .kpi-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px 12px; font-size: 12px; color: var(--text-secondary); border-bottom: 2px solid var(--border); text-transform: uppercase; }
+        td { padding: 10px 12px; font-size: 14px; border-bottom: 1px solid var(--border); }
+        tr:hover td { background: var(--surface); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-green { background: #e6f4ea; color: #1e7e34; }
+        .badge-blue { background: #e3f2fd; color: #1565c0; }
+        .badge-red { background: #fce4ec; color: #c62828; }
+        .badge-gray { background: #f5f5f5; color: #616161; }
+        .badge-amber { background: #fff3e0; color: #e65100; }
+        .btn { display: inline-block; padding: 8px 16px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; text-decoration: none; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); }
+        .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+        .alert-panel { border-left: 4px solid var(--accent); background: #fff8f0; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .health-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .health-green { background: #4caf50; }
+        .health-amber { background: #ff9800; }
+        .health-red { background: #f44336; }
+        .progress-bar-bg { background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <component type="typeof(ZeroInstall.Dashboard.Shared.App)" render-mode="ServerPrerendered" />
+
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>
