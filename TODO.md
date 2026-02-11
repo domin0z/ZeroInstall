@@ -299,10 +299,31 @@
   - [x] Per-customer encryption keys (passphrase-based in BackupConfiguration)
 - [x] Write tests (84 new, 872 total)
 
+## Phase 18: Bluetooth Transport ✅
+- [x] **Core Transport:**
+  - [x] IBluetoothAdapter — testability abstraction (IsBluetoothAvailable, DiscoverDevicesAsync, PairAsync, ConnectAsync, AcceptConnectionAsync, LocalDeviceName)
+  - [x] BluetoothAdapter — concrete impl wrapping InTheHand.Net.Bluetooth 4.2.x (32feet.NET)
+  - [x] DiscoveredBluetoothDevice model (DeviceName, Address, AddressString, IsPaired, IsZimService)
+  - [x] BluetoothTransport (ITransport + IAsyncDisposable) — RFCOMM, same 4-byte frame protocol as DirectWiFiTransport
+  - [x] Static helpers: EstimateTransferTime, DiscoverDevicesAsync convenience wrapper
+- [x] **Enum + SessionState:**
+  - [x] TransportMethod.Bluetooth enum value
+  - [x] ISessionState/SessionState — BluetoothDeviceName, BluetoothDeviceAddress, BluetoothIsServer + Reset()
+- [x] **CLI Integration:**
+  - [x] `zim capture --bt-address --bt-server` options
+  - [x] `zim restore --bt-address --bt-server` options
+- [x] **WPF Integration:**
+  - [x] NonEmptyStringToVisibilityConverter
+  - [x] CaptureConfigViewModel — Bluetooth properties, scan/pair commands, TransportMethods now has 5 entries
+  - [x] RestoreConfigViewModel — Bluetooth properties (BluetoothIsServer defaults true for restore/listening)
+  - [x] CaptureConfigView.xaml — Bluetooth config panel (speed warning, server/client radio, device list, pair button)
+  - [x] RestoreConfigView.xaml — Bluetooth config panel
+- [x] Write tests (56 new, 1007 total)
+
 ## Future Considerations (Post-v1.0)
 - [ ] Central web dashboard for job tracking and backup monitoring across all technicians/customers
-- [ ] Bluetooth transport for nearby transfers
 - [ ] macOS/Linux source support (read data from non-Windows drives)
 - [ ] Active Directory / domain profile migration
 - [x] BitLocker-encrypted volume handling (Phase 17: enum, model, service, CLI commands, WPF warning, 79 new tests — 951 total)
+- [x] Bluetooth transport for nearby transfers (Phase 18: IBluetoothAdapter, BluetoothTransport, CLI + WPF, 56 new tests — 1007 total)
 - [ ] UEFI firmware settings backup/restore
