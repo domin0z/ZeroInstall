@@ -19,13 +19,16 @@ public class DiskClonerService : IDiskCloner
 
     private readonly IProcessRunner _processRunner;
     private readonly ILogger<DiskClonerService> _logger;
+    private readonly IBitLockerService? _bitLockerService;
 
     public DiskClonerService(
         IProcessRunner processRunner,
-        ILogger<DiskClonerService> logger)
+        ILogger<DiskClonerService> logger,
+        IBitLockerService? bitLockerService = null)
     {
         _processRunner = processRunner;
         _logger = logger;
+        _bitLockerService = bitLockerService;
     }
 
     /// <summary>
@@ -38,6 +41,29 @@ public class DiskClonerService : IDiskCloner
         IProgress<TransferProgress>? progress = null,
         CancellationToken ct = default)
     {
+        // BitLocker pre-check
+        BitLockerStatus? bitLockerStatus = null;
+        if (_bitLockerService is not null)
+        {
+            bitLockerStatus = await _bitLockerService.GetStatusAsync(volumePath, ct);
+
+            if (bitLockerStatus.ProtectionStatus == BitLockerProtectionStatus.Locked)
+            {
+                throw new InvalidOperationException(
+                    $"Volume {volumePath} is BitLocker-locked. Cloning a locked volume produces encrypted " +
+                    "ciphertext that cannot be restored. Unlock the volume first using: " +
+                    $"zim bitlocker unlock {volumePath} --recovery-password <key>");
+            }
+
+            if (bitLockerStatus.ProtectionStatus == BitLockerProtectionStatus.Unlocked)
+            {
+                _logger.LogWarning(
+                    "Volume {Volume} is BitLocker-encrypted and unlocked. Data can be read, but " +
+                    "suspending BitLocker protection before cloning is recommended for reliability. " +
+                    "Use: manage-bde -protectors -disable {Volume}", volumePath, volumePath);
+            }
+        }
+
         var volumeInfo = GetVolumeInfo(volumePath);
 
         _logger.LogInformation("Starting volume clone: {Volume} ({Size} bytes) -> {Output} ({Format})",
@@ -68,7 +94,10 @@ public class DiskClonerService : IDiskCloner
             SourceVolumeUsedBytes = volumeInfo.TotalSize - volumeInfo.FreeSpace,
             ImageSizeBytes = imageSizeBytes,
             Format = format,
-            FileSystemType = volumeInfo.FileSystem
+            FileSystemType = volumeInfo.FileSystem,
+            SourceWasBitLockerEncrypted = bitLockerStatus?.IsEncrypted ?? false,
+            SourceBitLockerStatus = bitLockerStatus?.ProtectionStatus.ToString() ?? string.Empty,
+            BitLockerWasSuspended = bitLockerStatus?.ProtectionStatus == BitLockerProtectionStatus.Suspended
         };
 
         // Compute checksum

@@ -1,3 +1,5 @@
+using ZeroInstall.Core.Enums;
+
 namespace ZeroInstall.Core.Models;
 
 /// <summary>
@@ -44,4 +46,21 @@ public class VolumeDetail
     /// Health status (e.g., "Healthy", "At Risk").
     /// </summary>
     public string HealthStatus { get; set; } = string.Empty;
+
+    /// <summary>
+    /// BitLocker protection status for this volume.
+    /// </summary>
+    public BitLockerProtectionStatus BitLockerStatus { get; set; } = BitLockerProtectionStatus.Unknown;
+
+    /// <summary>
+    /// Whether this volume is BitLocker-encrypted (locked, unlocked, or suspended).
+    /// </summary>
+    public bool IsBitLockerEncrypted => BitLockerStatus is BitLockerProtectionStatus.Unlocked
+        or BitLockerProtectionStatus.Locked
+        or BitLockerProtectionStatus.Suspended;
+
+    /// <summary>
+    /// Lock status string from BitLocker (e.g., "Locked", "Unlocked").
+    /// </summary>
+    public string BitLockerLockStatus { get; set; } = string.Empty;
 }

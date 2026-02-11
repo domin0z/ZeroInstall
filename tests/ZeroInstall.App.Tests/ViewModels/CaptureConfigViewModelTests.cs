@@ -3,6 +3,7 @@ using ZeroInstall.App.Services;
 using ZeroInstall.App.ViewModels;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.App.Tests.ViewModels;
 
@@ -282,4 +283,95 @@ public class CaptureConfigViewModelTests
 
         _session.TransportMethod.Should().Be(TransportMethod.Sftp);
     }
+
+    #region BitLocker Warning
+
+    [Fact]
+    public async Task OnNavigatedTo_BitLockerLocked_ShowsWarning()
+    {
+        var bitLocker = Substitute.For<IBitLockerService>();
+        bitLocker.GetStatusAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new BitLockerStatus
+            {
+                VolumePath = "C:",
+                ProtectionStatus = BitLockerProtectionStatus.Locked,
+                LockStatus = "Locked"
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, bitLocker);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowBitLockerWarning.Should().BeTrue();
+        vm.BitLockerWarning.Should().Contain("LOCKED");
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_BitLockerUnlocked_ShowsNotice()
+    {
+        var bitLocker = Substitute.For<IBitLockerService>();
+        bitLocker.GetStatusAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new BitLockerStatus
+            {
+                VolumePath = "C:",
+                ProtectionStatus = BitLockerProtectionStatus.Unlocked,
+                LockStatus = "Unlocked"
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, bitLocker);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowBitLockerWarning.Should().BeTrue();
+        vm.BitLockerWarning.Should().Contain("encrypted");
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_BitLockerNotProtected_NoWarning()
+    {
+        var bitLocker = Substitute.For<IBitLockerService>();
+        bitLocker.GetStatusAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new BitLockerStatus
+            {
+                VolumePath = "C:",
+                ProtectionStatus = BitLockerProtectionStatus.NotProtected
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, bitLocker);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowBitLockerWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_NullBitLockerService_NoWarning()
+    {
+        // Default SUT has no BitLocker service
+        _session.SelectedItems = [];
+
+        await _sut.OnNavigatedTo();
+
+        _sut.ShowBitLockerWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_BitLockerServiceThrows_NoWarning()
+    {
+        var bitLocker = Substitute.For<IBitLockerService>();
+        bitLocker.GetStatusAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<BitLockerStatus>(_ => throw new InvalidOperationException("error"));
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, bitLocker);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowBitLockerWarning.Should().BeFalse();
+    }
+
+    #endregion
 }

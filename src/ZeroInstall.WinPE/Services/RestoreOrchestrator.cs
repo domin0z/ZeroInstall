@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Migration;
 using ZeroInstall.Core.Models;
 using ZeroInstall.Core.Services;
@@ -35,15 +36,18 @@ public class RestoreOrchestrator
     private readonly IDiskCloner _diskCloner;
     private readonly DriverInjectionService _driverInjection;
     private readonly ILogger<RestoreOrchestrator> _logger;
+    private readonly IBitLockerService? _bitLockerService;
 
     public RestoreOrchestrator(
         IDiskCloner diskCloner,
         DriverInjectionService driverInjection,
-        ILogger<RestoreOrchestrator> logger)
+        ILogger<RestoreOrchestrator> logger,
+        IBitLockerService? bitLockerService = null)
     {
         _diskCloner = diskCloner;
         _driverInjection = driverInjection;
         _logger = logger;
+        _bitLockerService = bitLockerService;
     }
 
     /// <summary>
@@ -75,6 +79,31 @@ public class RestoreOrchestrator
                     };
                 }
                 _logger.LogInformation("Image verification passed");
+            }
+
+            // Step 1b: BitLocker pre-check on target volume
+            if (_bitLockerService is not null)
+            {
+                var blStatus = await _bitLockerService.GetStatusAsync(targetVolumePath, ct);
+
+                if (blStatus.ProtectionStatus == BitLockerProtectionStatus.Locked)
+                {
+                    return new RestoreResult
+                    {
+                        Success = false,
+                        Duration = sw.Elapsed,
+                        Error = $"Target volume {targetVolumePath} is BitLocker-locked. " +
+                                "Unlock the volume before restoring."
+                    };
+                }
+
+                if (blStatus.IsEncrypted)
+                {
+                    _logger.LogWarning(
+                        "Target volume {Volume} is BitLocker-encrypted ({Status}). " +
+                        "Restoring to an encrypted volume may require re-enabling BitLocker after restore.",
+                        targetVolumePath, blStatus.ProtectionStatus);
+                }
             }
 
             // Step 2: Restore the image

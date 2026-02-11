@@ -304,5 +304,5 @@
 - [ ] Bluetooth transport for nearby transfers
 - [ ] macOS/Linux source support (read data from non-Windows drives)
 - [ ] Active Directory / domain profile migration
-- [ ] BitLocker-encrypted volume handling
+- [x] BitLocker-encrypted volume handling (Phase 17: enum, model, service, CLI commands, WPF warning, 79 new tests — 951 total)
 - [ ] UEFI firmware settings backup/restore

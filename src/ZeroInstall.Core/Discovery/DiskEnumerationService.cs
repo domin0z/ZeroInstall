@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.Core.Discovery;
 
@@ -11,11 +12,16 @@ public class DiskEnumerationService
 {
     private readonly IProcessRunner _processRunner;
     private readonly ILogger<DiskEnumerationService> _logger;
+    private readonly IBitLockerService? _bitLockerService;
 
-    public DiskEnumerationService(IProcessRunner processRunner, ILogger<DiskEnumerationService> logger)
+    public DiskEnumerationService(
+        IProcessRunner processRunner,
+        ILogger<DiskEnumerationService> logger,
+        IBitLockerService? bitLockerService = null)
     {
         _processRunner = processRunner;
         _logger = logger;
+        _bitLockerService = bitLockerService;
     }
 
     /// <summary>
@@ -57,7 +63,27 @@ public class DiskEnumerationService
             return [];
         }
 
-        return ParseVolumeJson(result.StandardOutput);
+        var volumes = ParseVolumeJson(result.StandardOutput);
+
+        // Populate BitLocker status if service is available
+        if (_bitLockerService is not null)
+        {
+            foreach (var volume in volumes.Where(v => !string.IsNullOrEmpty(v.DriveLetter)))
+            {
+                try
+                {
+                    var blStatus = await _bitLockerService.GetStatusAsync(volume.DriveLetter + ":", ct);
+                    volume.BitLockerStatus = blStatus.ProtectionStatus;
+                    volume.BitLockerLockStatus = blStatus.LockStatus;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to query BitLocker status for {Volume}", volume.DriveLetter);
+                }
+            }
+        }
+
+        return volumes;
     }
 
     /// <summary>

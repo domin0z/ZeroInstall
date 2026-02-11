@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
 
 namespace ZeroInstall.CLI.Infrastructure;
@@ -175,6 +176,43 @@ internal static class OutputFormatter
             Console.WriteLine("Warnings:");
             foreach (var w in report.Warnings)
                 Console.WriteLine($"  - {w}");
+        }
+    }
+
+    public static void WriteBitLockerStatus(IReadOnlyList<BitLockerStatus> statuses, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(statuses, JsonOptions));
+            return;
+        }
+
+        if (statuses.Count == 0)
+        {
+            Console.WriteLine("No volumes found.");
+            return;
+        }
+
+        Console.WriteLine($"{"Volume",-10} {"Protection",-15} {"Lock Status",-15} {"Encryption",-20} {"Encrypted %",11}");
+        Console.WriteLine(new string('-', 75));
+
+        foreach (var s in statuses)
+        {
+            Console.WriteLine(
+                $"{s.VolumePath,-10} {s.ProtectionStatus,-15} {Truncate(s.LockStatus, 15),-15} {Truncate(s.EncryptionMethod, 20),-20} {s.PercentageEncrypted,10:F1}%");
+        }
+
+        Console.WriteLine();
+
+        var encrypted = statuses.Count(s => s.IsEncrypted);
+        var locked = statuses.Count(s => s.ProtectionStatus == BitLockerProtectionStatus.Locked);
+
+        Console.WriteLine($"Total: {statuses.Count} volumes, {encrypted} encrypted, {locked} locked");
+
+        if (locked > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("WARNING: Locked volumes cannot be cloned. Use 'zim bitlocker unlock <volume>' first.");
         }
     }
 

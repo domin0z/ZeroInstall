@@ -95,6 +95,83 @@ public class OutputFormatterTests
         output.Should().Contain("No profiles found.");
     }
 
+    [Fact]
+    public void WriteBitLockerStatus_Table_ShowsColumns()
+    {
+        var statuses = new List<BitLockerStatus>
+        {
+            new()
+            {
+                VolumePath = "C:",
+                ProtectionStatus = BitLockerProtectionStatus.Unlocked,
+                LockStatus = "Unlocked",
+                EncryptionMethod = "XTS-AES 128",
+                PercentageEncrypted = 100.0
+            }
+        };
+
+        var output = CaptureConsoleOutput(() =>
+            OutputFormatter.WriteBitLockerStatus(statuses, false));
+
+        output.Should().Contain("C:");
+        output.Should().Contain("Unlocked");
+        output.Should().Contain("XTS-AES 128");
+        output.Should().Contain("100.0%");
+        output.Should().Contain("1 encrypted");
+    }
+
+    [Fact]
+    public void WriteBitLockerStatus_Json_OutputsValidJson()
+    {
+        var statuses = new List<BitLockerStatus>
+        {
+            new()
+            {
+                VolumePath = "C:",
+                ProtectionStatus = BitLockerProtectionStatus.Unlocked,
+                EncryptionMethod = "XTS-AES 128"
+            }
+        };
+
+        var output = CaptureConsoleOutput(() =>
+            OutputFormatter.WriteBitLockerStatus(statuses, true));
+
+        output.Should().Contain("\"volumePath\"");
+        output.Should().Contain("C:");
+    }
+
+    [Fact]
+    public void WriteBitLockerStatus_Empty_ShowsMessage()
+    {
+        var statuses = new List<BitLockerStatus>();
+
+        var output = CaptureConsoleOutput(() =>
+            OutputFormatter.WriteBitLockerStatus(statuses, false));
+
+        output.Should().Contain("No volumes found.");
+    }
+
+    [Fact]
+    public void WriteBitLockerStatus_LockedVolume_ShowsWarning()
+    {
+        var statuses = new List<BitLockerStatus>
+        {
+            new()
+            {
+                VolumePath = "D:",
+                ProtectionStatus = BitLockerProtectionStatus.Locked,
+                LockStatus = "Locked"
+            }
+        };
+
+        var output = CaptureConsoleOutput(() =>
+            OutputFormatter.WriteBitLockerStatus(statuses, false));
+
+        output.Should().Contain("WARNING");
+        output.Should().Contain("Locked");
+        output.Should().Contain("1 locked");
+    }
+
     private static string CaptureConsoleOutput(Action action)
     {
         var originalOut = Console.Out;

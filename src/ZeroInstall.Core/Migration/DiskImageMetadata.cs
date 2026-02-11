@@ -81,6 +81,21 @@ public class DiskImageMetadata
     public bool UsedVss { get; set; }
 
     /// <summary>
+    /// Whether the source volume was BitLocker-encrypted at capture time.
+    /// </summary>
+    public bool SourceWasBitLockerEncrypted { get; set; }
+
+    /// <summary>
+    /// BitLocker status string of the source volume at capture time (e.g., "Unlocked", "Suspended").
+    /// </summary>
+    public string SourceBitLockerStatus { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether BitLocker protection was suspended prior to cloning.
+    /// </summary>
+    public bool BitLockerWasSuspended { get; set; }
+
+    /// <summary>
     /// File system type of the source volume (e.g., "NTFS").
     /// </summary>
     public string FileSystemType { get; set; } = string.Empty;

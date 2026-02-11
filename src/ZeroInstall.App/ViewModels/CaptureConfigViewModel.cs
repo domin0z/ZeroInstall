@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using ZeroInstall.App.Services;
 using ZeroInstall.Core.Enums;
+using ZeroInstall.Core.Services;
 using ZeroInstall.Core.Transport;
 
 namespace ZeroInstall.App.ViewModels;
@@ -17,6 +18,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
     private readonly ISessionState _session;
     private readonly INavigationService _navigationService;
     private readonly IDialogService _dialogService;
+    private readonly IBitLockerService? _bitLockerService;
     private ISftpClientWrapper? _sftpClient;
 
     public override string Title => "Configure";
@@ -85,6 +87,13 @@ public partial class CaptureConfigViewModel : ViewModelBase
     [ObservableProperty]
     private bool _sftpCompressBeforeUpload = true;
 
+    // BitLocker warning
+    [ObservableProperty]
+    private string _bitLockerWarning = string.Empty;
+
+    [ObservableProperty]
+    private bool _showBitLockerWarning;
+
     // NAS Browser state
     [ObservableProperty]
     private string _sftpCurrentBrowsePath = "/";
@@ -100,14 +109,19 @@ public partial class CaptureConfigViewModel : ViewModelBase
     public ObservableCollection<TransportMethod> TransportMethods { get; } =
         [TransportMethod.ExternalStorage, TransportMethod.NetworkShare, TransportMethod.DirectWiFi, TransportMethod.Sftp];
 
-    public CaptureConfigViewModel(ISessionState session, INavigationService navigationService, IDialogService dialogService)
+    public CaptureConfigViewModel(
+        ISessionState session,
+        INavigationService navigationService,
+        IDialogService dialogService,
+        IBitLockerService? bitLockerService = null)
     {
         _session = session;
         _navigationService = navigationService;
         _dialogService = dialogService;
+        _bitLockerService = bitLockerService;
     }
 
-    public override Task OnNavigatedTo()
+    public override async Task OnNavigatedTo()
     {
         var items = _session.SelectedItems.Where(i => i.IsSelected).ToList();
 
@@ -137,7 +151,49 @@ public partial class CaptureConfigViewModel : ViewModelBase
         SftpEncryptionPassphrase = _session.SftpEncryptionPassphrase;
         SftpCompressBeforeUpload = _session.SftpCompressBeforeUpload;
 
-        return Task.CompletedTask;
+        // Check BitLocker status on system drive
+        await CheckBitLockerStatusAsync();
+    }
+
+    private async Task CheckBitLockerStatusAsync()
+    {
+        if (_bitLockerService is null)
+        {
+            ShowBitLockerWarning = false;
+            return;
+        }
+
+        try
+        {
+            var systemDrive = System.IO.Path.GetPathRoot(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows)) ?? "C:\\";
+            var driveLetter = systemDrive.TrimEnd('\\');
+
+            var status = await _bitLockerService.GetStatusAsync(driveLetter);
+
+            if (status.ProtectionStatus == BitLockerProtectionStatus.Locked)
+            {
+                BitLockerWarning = $"BitLocker: Volume {driveLetter} is LOCKED. " +
+                                   "Cloning will produce encrypted data that cannot be restored. " +
+                                   "Unlock this volume before proceeding.";
+                ShowBitLockerWarning = true;
+            }
+            else if (status.ProtectionStatus == BitLockerProtectionStatus.Unlocked)
+            {
+                BitLockerWarning = $"BitLocker: Volume {driveLetter} is encrypted (unlocked). " +
+                                   "Data can be read, but suspending BitLocker protection before " +
+                                   "cloning is recommended for best results.";
+                ShowBitLockerWarning = true;
+            }
+            else
+            {
+                ShowBitLockerWarning = false;
+            }
+        }
+        catch
+        {
+            ShowBitLockerWarning = false;
+        }
     }
 
     [RelayCommand]

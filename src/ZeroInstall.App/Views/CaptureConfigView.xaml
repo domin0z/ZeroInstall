@@ -34,6 +34,19 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
             <StackPanel MaxWidth="600" HorizontalAlignment="Left">
 
+                <!-- BitLocker Warning Banner -->
+                <Border Background="#FFF3E0"
+                        BorderBrush="#F57C00"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="14,10"
+                        Margin="0,0,0,16"
+                        Visibility="{Binding ShowBitLockerWarning, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding BitLockerWarning}"
+                               FontSize="12"
+                               Foreground="#E65100"
+                               TextWrapping="Wrap" />
+                </Border>
+
                 <!-- Output Location -->
                 <TextBlock Text="Output Location"
                            Style="{StaticResource SubheaderText}"

@@ -30,7 +30,8 @@ internal static class Program
             RestoreCommand.Create(verboseOption, jsonOption),
             StatusCommand.Create(verboseOption, jsonOption),
             ProfileCommand.Create(verboseOption, jsonOption),
-            JobCommand.Create(verboseOption, jsonOption)
+            JobCommand.Create(verboseOption, jsonOption),
+            BitLockerCommand.Create(verboseOption, jsonOption)
         };
 
         return await rootCommand.Parse(args).InvokeAsync();
