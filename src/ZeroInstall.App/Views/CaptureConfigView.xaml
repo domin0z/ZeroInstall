@@ -49,6 +49,67 @@
                                TextWrapping="Wrap" />
                 </Border>
 
+                <!-- Firmware Information Panel -->
+                <Border Background="{StaticResource BackgroundWhiteBrush}"
+                        BorderBrush="{StaticResource BorderGrayBrush}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="16,12"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding ShowFirmwareInfo, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="Firmware Information"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{StaticResource PrimaryTealBrush}"
+                                   Margin="0,0,0,8" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Firmware Type:" FontSize="12" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding FirmwareTypeDisplay}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="BIOS:" FontSize="12" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BiosInfoDisplay}" FontSize="12" Margin="0,0,0,4" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="System:" FontSize="12" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SystemInfoDisplay}" FontSize="12" Margin="0,0,0,4" />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Secure Boot:" FontSize="12" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SecureBootDisplay}" FontSize="12" Margin="0,0,0,4" />
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="TPM:" FontSize="12" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TpmDisplay}" FontSize="12" Margin="0,0,0,4" />
+                        </Grid>
+
+                        <CheckBox Content="Include BCD store backup"
+                                  IsChecked="{Binding IncludeBcdBackup}"
+                                  Margin="0,8,0,4"
+                                  FontSize="12" />
+
+                        <!-- Firmware Warning Banner -->
+                        <Border Background="#FFF3E0"
+                                BorderBrush="#F57C00"
+                                BorderThickness="1" CornerRadius="4"
+                                Padding="10,8"
+                                Margin="0,8,0,0"
+                                Visibility="{Binding ShowFirmwareWarning, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding FirmwareWarning}"
+                                       FontSize="11"
+                                       Foreground="#E65100"
+                                       TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
                 <!-- Output Location -->
                 <TextBlock Text="Output Location"
                            Style="{StaticResource SubheaderText}"

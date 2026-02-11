@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileSystemAccessor, WindowsFileSystemAccessor>();
         services.AddSingleton<IProcessRunner, WindowsProcessRunner>();
         services.AddSingleton<IBitLockerService, BitLockerService>();
+        services.AddSingleton<IFirmwareService, FirmwareService>();
 
         // Discovery (transient)
         services.AddTransient<ApplicationDiscoveryService>();

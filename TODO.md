@@ -320,10 +320,31 @@
   - [x] RestoreConfigView.xaml — Bluetooth config panel
 - [x] Write tests (56 new, 1007 total)
 
+## Phase 19: UEFI Firmware Settings Backup/Restore ✅
+- [x] **Core Enums & Models:**
+  - [x] FirmwareType enum (Unknown, Bios, Uefi)
+  - [x] SecureBootStatus enum (Unknown, Enabled, Disabled, NotSupported)
+  - [x] FirmwareInfo model (firmware type, Secure Boot, TPM, BIOS vendor/version, system manufacturer/model, boot entries)
+  - [x] BcdBootEntry model (identifier, entry type, description, device, path, default flag, properties dict)
+- [x] **FirmwareService:**
+  - [x] IFirmwareService interface (GetFirmwareInfoAsync, ExportBcdAsync, ImportBcdAsync, GetBootEntriesAsync)
+  - [x] FirmwareService (internal) — PowerShell WMI queries + bcdedit via IProcessRunner
+  - [x] Static parse methods: ParseFirmwareType, ParseSecureBootStatus, ParseBiosInfo, ParseSystemInfo, ParseTpmInfo, ParseBcdEnum
+  - [x] DI registration in ServiceCollectionExtensions
+- [x] **CLI Integration:**
+  - [x] FirmwareCommand with 4 subcommands (status, backup-bcd, restore-bcd, list-boot-entries)
+  - [x] OutputFormatter.WriteFirmwareInfo and WriteBootEntries methods
+  - [x] Program.cs wiring
+- [x] **WPF Integration:**
+  - [x] ISessionState/SessionState — IncludeBcdBackup property (default: true) + Reset()
+  - [x] CaptureConfigViewModel — optional IFirmwareService?, firmware display properties, CheckFirmwareInfoAsync
+  - [x] CaptureConfigView.xaml — firmware info panel with diagnostics, BCD checkbox, amber warning about non-portable settings
+- [x] Write tests (51 new, 1058 total)
+
 ## Future Considerations (Post-v1.0)
 - [ ] Central web dashboard for job tracking and backup monitoring across all technicians/customers
 - [ ] macOS/Linux source support (read data from non-Windows drives)
 - [ ] Active Directory / domain profile migration
 - [x] BitLocker-encrypted volume handling (Phase 17: enum, model, service, CLI commands, WPF warning, 79 new tests — 951 total)
 - [x] Bluetooth transport for nearby transfers (Phase 18: IBluetoothAdapter, BluetoothTransport, CLI + WPF, 56 new tests — 1007 total)
-- [ ] UEFI firmware settings backup/restore
+- [x] UEFI firmware settings backup/restore (Phase 19: FirmwareService, BCD backup/restore, CLI + WPF, 51 new tests — 1058 total)

@@ -40,6 +40,9 @@ public interface ISessionState
     ulong BluetoothDeviceAddress { get; set; }
     bool BluetoothIsServer { get; set; }
 
+    // Firmware configuration
+    bool IncludeBcdBackup { get; set; }
+
     /// <summary>
     /// Clears all state for a new migration.
     /// </summary>

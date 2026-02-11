@@ -4,6 +4,7 @@ using ZeroInstall.App.ViewModels;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
 using ZeroInstall.Core.Services;
+using ZeroInstall.Core.Transport;
 
 namespace ZeroInstall.App.Tests.ViewModels;
 
@@ -457,6 +458,111 @@ public class CaptureConfigViewModelTests
         _sut.BluetoothIsConnected.Should().BeTrue();
         _sut.BluetoothConnectionStatus.Should().Be("Connected");
         _sut.BluetoothSpeedWarning.Should().Be("Slow transfer");
+    }
+
+    #endregion
+
+    #region Firmware
+
+    [Fact]
+    public async Task OnNavigatedTo_FirmwareServiceShowsInfo()
+    {
+        var firmware = Substitute.For<IFirmwareService>();
+        firmware.GetFirmwareInfoAsync(Arg.Any<CancellationToken>())
+            .Returns(new FirmwareInfo
+            {
+                FirmwareType = FirmwareType.Uefi,
+                SecureBoot = SecureBootStatus.Enabled,
+                TpmPresent = true,
+                TpmVersion = "2.0",
+                BiosVendor = "AMI",
+                BiosVersion = "1.0",
+                SystemManufacturer = "Dell",
+                SystemModel = "OptiPlex 7090"
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, firmwareService: firmware);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowFirmwareInfo.Should().BeTrue();
+        vm.FirmwareTypeDisplay.Should().Be("Uefi");
+        vm.SecureBootDisplay.Should().Be("Enabled");
+        vm.TpmDisplay.Should().Contain("2.0");
+        vm.BiosInfoDisplay.Should().Contain("AMI");
+        vm.SystemInfoDisplay.Should().Contain("Dell");
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_FirmwareServiceShowsWarning()
+    {
+        var firmware = Substitute.For<IFirmwareService>();
+        firmware.GetFirmwareInfoAsync(Arg.Any<CancellationToken>())
+            .Returns(new FirmwareInfo { FirmwareType = FirmwareType.Uefi });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, firmwareService: firmware);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowFirmwareWarning.Should().BeTrue();
+        vm.FirmwareWarning.Should().Contain("cannot be migrated");
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_NullFirmwareService_HidesInfo()
+    {
+        _session.SelectedItems = [];
+
+        await _sut.OnNavigatedTo();
+
+        _sut.ShowFirmwareInfo.Should().BeFalse();
+        _sut.ShowFirmwareWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_FirmwareServiceThrows_HidesInfo()
+    {
+        var firmware = Substitute.For<IFirmwareService>();
+        firmware.GetFirmwareInfoAsync(Arg.Any<CancellationToken>())
+            .Returns<FirmwareInfo>(_ => throw new InvalidOperationException("error"));
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, firmwareService: firmware);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowFirmwareInfo.Should().BeFalse();
+        vm.ShowFirmwareWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IncludeBcdBackup_DefaultsTrue()
+    {
+        _sut.IncludeBcdBackup.Should().BeTrue();
+    }
+
+    [Fact]
+    public void StartCapture_SavesBcdBackupFlagToSession()
+    {
+        _sut.OutputPath = @"E:\out";
+        _sut.IncludeBcdBackup = false;
+
+        _sut.StartCaptureCommand.Execute(null);
+
+        _session.IncludeBcdBackup.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_RestoresBcdBackupFlagFromSession()
+    {
+        _session.IncludeBcdBackup = false;
+        _session.SelectedItems = [];
+
+        await _sut.OnNavigatedTo();
+
+        _sut.IncludeBcdBackup.Should().BeFalse();
     }
 
     #endregion

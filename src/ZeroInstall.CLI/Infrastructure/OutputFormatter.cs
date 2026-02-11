@@ -216,6 +216,66 @@ internal static class OutputFormatter
         }
     }
 
+    public static void WriteFirmwareInfo(FirmwareInfo info, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(info, JsonOptions));
+            return;
+        }
+
+        Console.WriteLine("Firmware Information");
+        Console.WriteLine(new string('-', 50));
+        Console.WriteLine($"  Firmware Type:      {info.FirmwareType}");
+        Console.WriteLine($"  Secure Boot:        {info.SecureBoot}");
+        Console.WriteLine($"  TPM Present:        {(info.TpmPresent ? "Yes" : "No")}");
+        if (info.TpmPresent)
+            Console.WriteLine($"  TPM Version:        {info.TpmVersion}");
+        Console.WriteLine($"  BIOS Vendor:        {info.BiosVendor}");
+        Console.WriteLine($"  BIOS Version:       {info.BiosVersion}");
+        if (!string.IsNullOrEmpty(info.BiosReleaseDate))
+            Console.WriteLine($"  BIOS Release Date:  {info.BiosReleaseDate}");
+        Console.WriteLine($"  System Manufacturer:{(string.IsNullOrEmpty(info.SystemManufacturer) ? " N/A" : " " + info.SystemManufacturer)}");
+        Console.WriteLine($"  System Model:       {(string.IsNullOrEmpty(info.SystemModel) ? "N/A" : info.SystemModel)}");
+
+        if (info.BootEntries.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"  Boot Entries:       {info.BootEntries.Count}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("NOTE: BIOS/UEFI settings (boot order, virtualization, etc.) are hardware-specific");
+        Console.WriteLine("      and cannot be migrated. Configure these manually on the destination machine.");
+    }
+
+    public static void WriteBootEntries(IReadOnlyList<BcdBootEntry> entries, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(entries, JsonOptions));
+            return;
+        }
+
+        if (entries.Count == 0)
+        {
+            Console.WriteLine("No boot entries found.");
+            return;
+        }
+
+        Console.WriteLine($"{"Identifier",-40} {"Type",-25} {"Description",-20} {"Default"}");
+        Console.WriteLine(new string('-', 95));
+
+        foreach (var e in entries)
+        {
+            Console.WriteLine(
+                $"{Truncate(e.Identifier, 40),-40} {Truncate(e.EntryType, 25),-25} {Truncate(e.Description, 20),-20} {(e.IsDefault ? "*" : "")}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Total: {entries.Count} entries");
+    }
+
     public static string FormatBytes(long bytes)
     {
         if (bytes < 0) return "0 B";

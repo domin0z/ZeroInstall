@@ -40,6 +40,9 @@ internal sealed class SessionState : ISessionState
     public ulong BluetoothDeviceAddress { get; set; }
     public bool BluetoothIsServer { get; set; }
 
+    // Firmware configuration
+    public bool IncludeBcdBackup { get; set; } = true;
+
     public void Reset()
     {
         Role = default;
@@ -66,5 +69,6 @@ internal sealed class SessionState : ISessionState
         BluetoothDeviceName = string.Empty;
         BluetoothDeviceAddress = 0;
         BluetoothIsServer = false;
+        IncludeBcdBackup = true;
     }
 }

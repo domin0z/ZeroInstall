@@ -287,4 +287,28 @@ public class SessionStateTests
 
         _sut.BluetoothDeviceName.Should().BeEmpty();
     }
+
+    [Fact]
+    public void IncludeBcdBackup_DefaultsTrue()
+    {
+        _sut.IncludeBcdBackup.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IncludeBcdBackup_SetRetainsValue()
+    {
+        _sut.IncludeBcdBackup = false;
+
+        _sut.IncludeBcdBackup.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Reset_IncludeBcdBackup_ReturnsTrue()
+    {
+        _sut.IncludeBcdBackup = false;
+
+        _sut.Reset();
+
+        _sut.IncludeBcdBackup.Should().BeTrue();
+    }
 }

@@ -19,6 +19,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
     private readonly INavigationService _navigationService;
     private readonly IDialogService _dialogService;
     private readonly IBitLockerService? _bitLockerService;
+    private readonly IFirmwareService? _firmwareService;
     private ISftpClientWrapper? _sftpClient;
 
     public override string Title => "Configure";
@@ -94,6 +95,34 @@ public partial class CaptureConfigViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showBitLockerWarning;
 
+    // Firmware info
+    [ObservableProperty]
+    private string _firmwareTypeDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string _secureBootDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string _tpmDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string _biosInfoDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string _systemInfoDisplay = string.Empty;
+
+    [ObservableProperty]
+    private bool _showFirmwareInfo;
+
+    [ObservableProperty]
+    private string _firmwareWarning = string.Empty;
+
+    [ObservableProperty]
+    private bool _showFirmwareWarning;
+
+    [ObservableProperty]
+    private bool _includeBcdBackup = true;
+
     // NAS Browser state
     [ObservableProperty]
     private string _sftpCurrentBrowsePath = "/";
@@ -137,12 +166,14 @@ public partial class CaptureConfigViewModel : ViewModelBase
         ISessionState session,
         INavigationService navigationService,
         IDialogService dialogService,
-        IBitLockerService? bitLockerService = null)
+        IBitLockerService? bitLockerService = null,
+        IFirmwareService? firmwareService = null)
     {
         _session = session;
         _navigationService = navigationService;
         _dialogService = dialogService;
         _bitLockerService = bitLockerService;
+        _firmwareService = firmwareService;
     }
 
     public override async Task OnNavigatedTo()
@@ -177,9 +208,13 @@ public partial class CaptureConfigViewModel : ViewModelBase
         BluetoothDeviceName = _session.BluetoothDeviceName;
         BluetoothDeviceAddress = _session.BluetoothDeviceAddress;
         BluetoothIsServer = _session.BluetoothIsServer;
+        IncludeBcdBackup = _session.IncludeBcdBackup;
 
         // Check BitLocker status on system drive
         await CheckBitLockerStatusAsync();
+
+        // Check firmware info
+        await CheckFirmwareInfoAsync();
     }
 
     private async Task CheckBitLockerStatusAsync()
@@ -220,6 +255,42 @@ public partial class CaptureConfigViewModel : ViewModelBase
         catch
         {
             ShowBitLockerWarning = false;
+        }
+    }
+
+    private async Task CheckFirmwareInfoAsync()
+    {
+        if (_firmwareService is null)
+        {
+            ShowFirmwareInfo = false;
+            ShowFirmwareWarning = false;
+            return;
+        }
+
+        try
+        {
+            var info = await _firmwareService.GetFirmwareInfoAsync();
+
+            FirmwareTypeDisplay = info.FirmwareType.ToString();
+            SecureBootDisplay = info.SecureBoot.ToString();
+            TpmDisplay = info.TpmPresent ? $"Yes (v{info.TpmVersion})" : "No";
+            BiosInfoDisplay = !string.IsNullOrEmpty(info.BiosVendor)
+                ? $"{info.BiosVendor} {info.BiosVersion}"
+                : "N/A";
+            SystemInfoDisplay = !string.IsNullOrEmpty(info.SystemManufacturer)
+                ? $"{info.SystemManufacturer} {info.SystemModel}"
+                : "N/A";
+
+            ShowFirmwareInfo = true;
+            FirmwareWarning = "BIOS/UEFI settings (boot order, virtualization, power management) are " +
+                              "hardware-specific and cannot be migrated. Configure these manually on the " +
+                              "destination machine. Only the BCD boot store can be backed up.";
+            ShowFirmwareWarning = true;
+        }
+        catch
+        {
+            ShowFirmwareInfo = false;
+            ShowFirmwareWarning = false;
         }
     }
 
@@ -333,6 +404,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
         _session.BluetoothDeviceName = BluetoothDeviceName;
         _session.BluetoothDeviceAddress = BluetoothDeviceAddress;
         _session.BluetoothIsServer = BluetoothIsServer;
+        _session.IncludeBcdBackup = IncludeBcdBackup;
         _navigationService.NavigateTo<MigrationProgressViewModel>();
     }
 
