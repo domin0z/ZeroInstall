@@ -1,6 +1,7 @@
 using ZeroInstall.App.ViewModels;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.App.Services;
 
@@ -43,6 +44,9 @@ internal sealed class SessionState : ISessionState
     // Firmware configuration
     public bool IncludeBcdBackup { get; set; } = true;
 
+    // Domain migration configuration
+    public DomainMigrationConfiguration? DomainMigrationConfig { get; set; }
+
     public void Reset()
     {
         Role = default;
@@ -70,5 +74,6 @@ internal sealed class SessionState : ISessionState
         BluetoothDeviceAddress = 0;
         BluetoothIsServer = false;
         IncludeBcdBackup = true;
+        DomainMigrationConfig = null;
     }
 }

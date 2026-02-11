@@ -276,6 +276,53 @@ internal static class OutputFormatter
         Console.WriteLine($"Total: {entries.Count} entries");
     }
 
+    public static void WriteDomainInfo(DomainInfo info, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(info, JsonOptions));
+            return;
+        }
+
+        Console.WriteLine("Domain Status");
+        Console.WriteLine(new string('-', 50));
+        Console.WriteLine($"  Join Type:          {info.JoinType}");
+        Console.WriteLine($"  Domain/Workgroup:   {info.DomainOrWorkgroup}");
+        Console.WriteLine($"  Domain Joined:      {(info.IsDomainJoined ? "Yes" : "No")}");
+
+        if (!string.IsNullOrEmpty(info.DomainController))
+            Console.WriteLine($"  Domain Controller:  {info.DomainController}");
+
+        if (!string.IsNullOrEmpty(info.AzureAdTenantName))
+        {
+            Console.WriteLine();
+            Console.WriteLine("  Azure AD:");
+            Console.WriteLine($"    Tenant Name:      {info.AzureAdTenantName}");
+            if (!string.IsNullOrEmpty(info.AzureAdTenantId))
+                Console.WriteLine($"    Tenant ID:        {info.AzureAdTenantId}");
+            if (!string.IsNullOrEmpty(info.AzureAdDeviceId))
+                Console.WriteLine($"    Device ID:        {info.AzureAdDeviceId}");
+        }
+
+        Console.WriteLine();
+        if (info.IsDomainJoined)
+        {
+            Console.WriteLine("NOTE: Domain policies, GPOs, and trust relationships cannot be migrated");
+            Console.WriteLine("      automatically. The destination machine must be joined separately.");
+        }
+    }
+
+    public static void WriteDomainJoinResult(bool success, string message, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new { success, message }, JsonOptions));
+            return;
+        }
+
+        Console.WriteLine(success ? $"SUCCESS: {message}" : $"FAILED: {message}");
+    }
+
     public static string FormatBytes(long bytes)
     {
         if (bytes < 0) return "0 B";

@@ -23,6 +23,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IProcessRunner, WindowsProcessRunner>();
         services.AddSingleton<IBitLockerService, BitLockerService>();
         services.AddSingleton<IFirmwareService, FirmwareService>();
+        services.AddSingleton<IDomainService, DomainService>();
+        services.AddSingleton<IDomainJoinService, DomainJoinService>();
+        services.AddSingleton<IProfileReassignmentService, ProfileReassignmentService>();
 
         // Discovery (transient)
         services.AddTransient<ApplicationDiscoveryService>();

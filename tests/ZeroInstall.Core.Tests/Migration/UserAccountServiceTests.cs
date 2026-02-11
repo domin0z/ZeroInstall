@@ -267,6 +267,153 @@ public class UserAccountServiceTests
 
     #endregion
 
+    #region DeleteUserAsync
+
+    [Fact]
+    public async Task DeleteUserAsync_Success_ReturnsTrue()
+    {
+        _processRunner.RunAsync("net", Arg.Is<string>(s => s.Contains("/delete")), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = 0 });
+
+        var result = await _service.DeleteUserAsync("OldUser");
+
+        result.Should().BeTrue();
+        await _processRunner.Received(1).RunAsync("net",
+            Arg.Is<string>(s => s.Contains("\"OldUser\"") && s.Contains("/delete")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_Failure_ReturnsFalse()
+    {
+        _processRunner.RunAsync("net", Arg.Is<string>(s => s.Contains("/delete")), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = -1, StandardError = "User not found" });
+
+        var result = await _service.DeleteUserAsync("NotFound");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_NotFound_ReturnsFalse()
+    {
+        _processRunner.RunAsync("net", Arg.Is<string>(s => s.Contains("/delete")), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = 2, StandardError = "The user name could not be found." });
+
+        var result = await _service.DeleteUserAsync("Ghost");
+
+        result.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region DisableUserAsync
+
+    [Fact]
+    public async Task DisableUserAsync_Success_ReturnsTrue()
+    {
+        _processRunner.RunAsync("net", Arg.Is<string>(s => s.Contains("/active:no")), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = 0 });
+
+        var result = await _service.DisableUserAsync("OldUser");
+
+        result.Should().BeTrue();
+        await _processRunner.Received(1).RunAsync("net",
+            Arg.Is<string>(s => s.Contains("\"OldUser\"") && s.Contains("/active:no")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DisableUserAsync_Failure_ReturnsFalse()
+    {
+        _processRunner.RunAsync("net", Arg.Is<string>(s => s.Contains("/active:no")), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = -1, StandardError = "Access denied" });
+
+        var result = await _service.DisableUserAsync("Admin");
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DisableUserAsync_NotFound_ReturnsFalse()
+    {
+        _processRunner.RunAsync("net", Arg.Is<string>(s => s.Contains("/active:no")), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = 2, StandardError = "The user name could not be found." });
+
+        var result = await _service.DisableUserAsync("Ghost");
+
+        result.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region SetAutoLogonAsync
+
+    [Fact]
+    public async Task SetAutoLogonAsync_SetsRegistryValues()
+    {
+        var result = await _service.SetAutoLogonAsync("Bill", "password123");
+
+        result.Should().BeTrue();
+        _registry.Received().SetStringValue(
+            RegistryHive.LocalMachine, RegistryView.Registry64,
+            Arg.Any<string>(), "AutoAdminLogon", "1");
+        _registry.Received().SetStringValue(
+            RegistryHive.LocalMachine, RegistryView.Registry64,
+            Arg.Any<string>(), "DefaultUserName", "Bill");
+        _registry.Received().SetStringValue(
+            RegistryHive.LocalMachine, RegistryView.Registry64,
+            Arg.Any<string>(), "DefaultPassword", "password123");
+    }
+
+    [Fact]
+    public async Task SetAutoLogonAsync_ClearsOnEmptyPassword()
+    {
+        var result = await _service.SetAutoLogonAsync("Bill", null);
+
+        result.Should().BeTrue();
+        _registry.Received().SetStringValue(
+            RegistryHive.LocalMachine, RegistryView.Registry64,
+            Arg.Any<string>(), "AutoAdminLogon", "0");
+        _registry.Received().SetStringValue(
+            RegistryHive.LocalMachine, RegistryView.Registry64,
+            Arg.Any<string>(), "DefaultUserName", "");
+        _registry.Received().SetStringValue(
+            RegistryHive.LocalMachine, RegistryView.Registry64,
+            Arg.Any<string>(), "DefaultPassword", "");
+    }
+
+    #endregion
+
+    #region ExistingTests_StillPass
+
+    [Fact]
+    public async Task ExistingCreateUser_StillWorks()
+    {
+        _processRunner.RunAsync("net", Arg.Is<string>(s => s.Contains("/add")), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = 0 });
+
+        _processRunner.RunAsync("powershell", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = 0, StandardOutput = "S-1-5-21-1234-5678-9012-1001\r\n" });
+
+        var sid = await _service.CreateUserAsync("TestUser", "P@ss");
+
+        sid.Should().StartWith("S-1-5-21-");
+    }
+
+    [Fact]
+    public async Task ExistingUserExists_StillWorks()
+    {
+        _processRunner.RunAsync("net", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ProcessResult { ExitCode = 0, StandardOutput = "User name TestUser" });
+
+        var exists = await _service.UserExistsAsync("TestUser");
+
+        exists.Should().BeTrue();
+    }
+
+    #endregion
+
     #region ParseSidFromOutput
 
     [Fact]

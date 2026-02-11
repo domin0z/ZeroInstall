@@ -341,10 +341,53 @@
   - [x] CaptureConfigView.xaml — firmware info panel with diagnostics, BCD checkbox, amber warning about non-portable settings
 - [x] Write tests (51 new, 1058 total)
 
+## Phase 20: Domain Migration (ForensIT-Grade) ✅
+- [x] **Core Enums & Models:**
+  - [x] DomainJoinType enum (Unknown, Workgroup, ActiveDirectory, AzureAd, HybridAzureAd)
+  - [x] UserAccountType enum (Unknown, Local, ActiveDirectory, AzureAd, MicrosoftAccount)
+  - [x] PostMigrationAccountAction enum (None, Disable, Delete)
+  - [x] DomainInfo model (JoinType, DomainOrWorkgroup, IsDomainJoined, AzureAd tenant fields, DomainController)
+  - [x] DomainCredentials model (Domain, Username, Password [JsonIgnore], IsValid)
+  - [x] DomainMigrationConfiguration model (TargetDomain, TargetOu, ComputerNewName, credentials, UserLookupMap, PostMigrationScript, PostMigrationAccountAction)
+  - [x] UserProfile extended with DomainName, AccountType
+  - [x] UserMapping extended with DomainMigrationWarning, PostMigrationAction, ReassignInPlace
+  - [x] MigrationJob extended with SourceDomainInfo, DestinationDomainInfo, DomainMigrationConfig
+- [x] **DomainService:**
+  - [x] IDomainService interface (GetDomainInfoAsync, ClassifyUserAccountAsync, GetUserDomainAsync)
+  - [x] DomainService (internal) — PowerShell WMI + dsregcmd + nltest + SID translation
+  - [x] Static parse methods: ParseWmiDomainInfo, ParseDsregcmd, ParseNltest, ParseNtAccount
+  - [x] DI registration in ServiceCollectionExtensions
+- [x] **DomainJoinService:**
+  - [x] IDomainJoinService interface (JoinDomainAsync, UnjoinDomainAsync, JoinAzureAdAsync, RenameComputerAsync)
+  - [x] DomainJoinService (internal) — PowerShell Add-Computer/Remove-Computer/Rename-Computer, dsregcmd
+  - [x] DI registration
+- [x] **ProfileReassignmentService:**
+  - [x] IProfileReassignmentService interface (ReassignProfileAsync, RenameProfileFolderAsync, SetSidHistoryAsync)
+  - [x] ProfileReassignmentService (internal) — registry ProfileList surgery + icacls + NTUSER.DAT SID rewrite
+  - [x] DI registration
+- [x] **UserAccountManager extensions:**
+  - [x] DeleteUserAsync, DisableUserAsync, SetAutoLogonAsync added to IUserAccountManager + UserAccountService
+  - [x] IRegistryAccessor extended with SetStringValue
+- [x] **UserProfileDiscoveryService:**
+  - [x] Optional IDomainService? 4th param for proper account classification
+  - [x] Fixed IsLocal heuristic (was broken `!sid.Contains("-500")`)
+- [x] **CLI Integration:**
+  - [x] DomainCommand with 5 subcommands (status, join, unjoin, rename, migrate-profile)
+  - [x] OutputFormatter.WriteDomainInfo and WriteDomainJoinResult methods
+  - [x] Program.cs wiring
+- [x] **WPF Integration:**
+  - [x] ISessionState/SessionState — DomainMigrationConfiguration? + Reset()
+  - [x] CaptureConfigViewModel — optional IDomainService?, domain info panel, amber warning for AD
+  - [x] CaptureConfigView.xaml — domain info panel with join type, domain/workgroup, DC display
+  - [x] RestoreConfigViewModel — domain join config (target domain, OU, computer name, credentials, Azure AD)
+  - [x] RestoreConfigView.xaml — domain configuration section with join options
+  - [x] UserMappingEntryViewModel — DomainWarning, ShowDomainWarning, PostMigrationAction, ReassignInPlace, ShowDomainOptions
+- [x] Write tests (94 new, 1152 total)
+
 ## Future Considerations (Post-v1.0)
 - [ ] Central web dashboard for job tracking and backup monitoring across all technicians/customers
 - [ ] macOS/Linux source support (read data from non-Windows drives)
-- [ ] Active Directory / domain profile migration
+- [x] Active Directory / domain profile migration (Phase 20: ForensIT-grade domain migration, 94 new tests — 1152 total)
 - [x] BitLocker-encrypted volume handling (Phase 17: enum, model, service, CLI commands, WPF warning, 79 new tests — 951 total)
 - [x] Bluetooth transport for nearby transfers (Phase 18: IBluetoothAdapter, BluetoothTransport, CLI + WPF, 56 new tests — 1007 total)
 - [x] UEFI firmware settings backup/restore (Phase 19: FirmwareService, BCD backup/restore, CLI + WPF, 51 new tests — 1058 total)

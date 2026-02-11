@@ -7,6 +7,7 @@ using ZeroInstall.App.Services;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Migration;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 using ZeroInstall.Core.Transport;
 
 namespace ZeroInstall.App.ViewModels;
@@ -95,6 +96,40 @@ public partial class RestoreConfigViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _bluetoothSpeedWarning = string.Empty;
+
+    // Domain join configuration
+    [ObservableProperty]
+    private bool _joinDomain;
+
+    [ObservableProperty]
+    private string _targetDomain = string.Empty;
+
+    [ObservableProperty]
+    private string _targetOu = string.Empty;
+
+    [ObservableProperty]
+    private string _computerNewName = string.Empty;
+
+    [ObservableProperty]
+    private string _domainAdminUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _domainAdminPassword = string.Empty;
+
+    [ObservableProperty]
+    private bool _joinAzureAd;
+
+    [ObservableProperty]
+    private PostMigrationAccountAction _postMigrationAction;
+
+    [ObservableProperty]
+    private bool _reassignInPlace;
+
+    [ObservableProperty]
+    private bool _showDomainSection;
+
+    [ObservableProperty]
+    private string _sourceDomainInfo = string.Empty;
 
     public ObservableCollection<DiscoveredBluetoothDevice> BluetoothDiscoveredDevices { get; } = [];
 
@@ -270,6 +305,29 @@ public partial class RestoreConfigViewModel : ViewModelBase
         _session.BluetoothDeviceName = BluetoothDeviceName;
         _session.BluetoothDeviceAddress = BluetoothDeviceAddress;
         _session.BluetoothIsServer = BluetoothIsServer;
+
+        if (JoinDomain || JoinAzureAd)
+        {
+            _session.DomainMigrationConfig = new DomainMigrationConfiguration
+            {
+                TargetDomain = TargetDomain,
+                TargetOu = TargetOu,
+                ComputerNewName = ComputerNewName,
+                DomainCredentials = new DomainCredentials
+                {
+                    Domain = TargetDomain,
+                    Username = DomainAdminUsername,
+                    Password = DomainAdminPassword
+                },
+                JoinAzureAd = JoinAzureAd,
+                PostMigrationAccountAction = PostMigrationAction
+            };
+        }
+        else
+        {
+            _session.DomainMigrationConfig = null;
+        }
+
         _navigationService.NavigateTo<MigrationProgressViewModel>();
     }
 

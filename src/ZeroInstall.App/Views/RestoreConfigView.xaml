@@ -263,6 +263,98 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Domain Migration Config -->
+                <Border Background="{StaticResource BackgroundWhiteBrush}"
+                        BorderBrush="{StaticResource BorderGrayBrush}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="16,12"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding ShowDomainSection, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <TextBlock Text="Domain Configuration"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{StaticResource PrimaryTealBrush}"
+                                   Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding SourceDomainInfo}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="0,0,0,10" />
+
+                        <CheckBox Content="Join destination to domain"
+                                  IsChecked="{Binding JoinDomain}"
+                                  FontSize="12" Margin="0,0,0,8" />
+
+                        <!-- Domain join details (shown when JoinDomain checked) -->
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding JoinDomain}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Target Domain" FontSize="12" Margin="0,0,0,4" />
+                                    <TextBox Text="{Binding TargetDomain, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="8,6" FontSize="13" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="OU Path (optional)" FontSize="12" Margin="0,0,0,4" />
+                                    <TextBox Text="{Binding TargetOu, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="8,6" FontSize="13" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="New Computer Name (optional)" FontSize="12" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding ComputerNewName, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="8,6" FontSize="13" Margin="0,0,0,8" />
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Domain Admin Username" FontSize="12" Margin="0,0,0,4" />
+                                    <TextBox Text="{Binding DomainAdminUsername, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="8,6" FontSize="13" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Domain Admin Password" FontSize="12" Margin="0,0,0,4" />
+                                    <PasswordBox Padding="8,6" FontSize="13" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+
+                        <CheckBox Content="Join Azure AD / Entra ID"
+                                  IsChecked="{Binding JoinAzureAd}"
+                                  FontSize="12" Margin="0,4,0,8" />
+
+                        <!-- Domain Warning Banner -->
+                        <Border Background="#FFF3E0"
+                                BorderBrush="#F57C00"
+                                BorderThickness="1" CornerRadius="4"
+                                Padding="10,8"
+                                Margin="0,4,0,0">
+                            <TextBlock Text="Domain join requires valid credentials and network connectivity to the domain controller. A reboot may be required after joining."
+                                       FontSize="11"
+                                       Foreground="#E65100"
+                                       TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
                 <!-- User Mapping -->
                 <StackPanel Visibility="{Binding HasValidCapture, Converter={StaticResource BoolToVisibility}}">
                     <TextBlock Text="User Mapping"

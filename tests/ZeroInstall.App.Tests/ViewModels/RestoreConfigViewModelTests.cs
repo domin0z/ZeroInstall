@@ -1,6 +1,9 @@
 using NSubstitute;
 using ZeroInstall.App.Services;
 using ZeroInstall.App.ViewModels;
+using ZeroInstall.Core.Enums;
+using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.App.Tests.ViewModels;
 
@@ -167,6 +170,71 @@ public class RestoreConfigViewModelTests
     {
         // Restore side should default to server (listening) mode
         _sut.BluetoothIsServer.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region Domain
+
+    [Fact]
+    public void DomainJoinFields_DefaultValues()
+    {
+        _sut.JoinDomain.Should().BeFalse();
+        _sut.TargetDomain.Should().BeEmpty();
+        _sut.TargetOu.Should().BeEmpty();
+        _sut.ComputerNewName.Should().BeEmpty();
+        _sut.DomainAdminUsername.Should().BeEmpty();
+        _sut.DomainAdminPassword.Should().BeEmpty();
+        _sut.JoinAzureAd.Should().BeFalse();
+        _sut.PostMigrationAction.Should().Be(PostMigrationAccountAction.None);
+        _sut.ReassignInPlace.Should().BeFalse();
+        _sut.ShowDomainSection.Should().BeFalse();
+    }
+
+    [Fact]
+    public void StartRestore_WithJoinDomain_SavesDomainConfigToSession()
+    {
+        // Setup valid capture state
+        _sut.HasValidCapture = true;
+        _sut.InputPath = @"E:\capture";
+        _sut.JoinDomain = true;
+        _sut.TargetDomain = "corp.local";
+        _sut.TargetOu = "OU=PCs,DC=corp,DC=local";
+        _sut.ComputerNewName = "NEWPC01";
+        _sut.DomainAdminUsername = "admin";
+        _sut.DomainAdminPassword = "pass";
+        _sut.PostMigrationAction = PostMigrationAccountAction.Disable;
+
+        _sut.StartRestoreCommand.Execute(null);
+
+        _session.DomainMigrationConfig.Should().NotBeNull();
+        _session.DomainMigrationConfig!.TargetDomain.Should().Be("corp.local");
+        _session.DomainMigrationConfig.TargetOu.Should().Be("OU=PCs,DC=corp,DC=local");
+        _session.DomainMigrationConfig.ComputerNewName.Should().Be("NEWPC01");
+        _session.DomainMigrationConfig.DomainCredentials.Username.Should().Be("admin");
+        _session.DomainMigrationConfig.PostMigrationAccountAction.Should().Be(PostMigrationAccountAction.Disable);
+    }
+
+    [Fact]
+    public void StartRestore_WithoutJoinDomain_NoDomainConfig()
+    {
+        _sut.HasValidCapture = true;
+        _sut.InputPath = @"E:\capture";
+        _sut.JoinDomain = false;
+
+        _sut.StartRestoreCommand.Execute(null);
+
+        _session.DomainMigrationConfig.Should().BeNull();
+    }
+
+    [Fact]
+    public void ShowDomainSection_CanBeSet()
+    {
+        _sut.ShowDomainSection = true;
+        _sut.ShowDomainSection.Should().BeTrue();
+
+        _sut.SourceDomainInfo = "Source was domain-joined to corp.local";
+        _sut.SourceDomainInfo.Should().Be("Source was domain-joined to corp.local");
     }
 
     #endregion

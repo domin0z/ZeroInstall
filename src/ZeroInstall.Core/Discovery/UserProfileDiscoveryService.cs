@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.Core.Discovery;
 
@@ -14,21 +16,24 @@ public class UserProfileDiscoveryService
     private readonly IRegistryAccessor _registry;
     private readonly IFileSystemAccessor _fileSystem;
     private readonly ILogger<UserProfileDiscoveryService> _logger;
+    private readonly IDomainService? _domainService;
 
     public UserProfileDiscoveryService(
         IRegistryAccessor registry,
         IFileSystemAccessor fileSystem,
-        ILogger<UserProfileDiscoveryService> logger)
+        ILogger<UserProfileDiscoveryService> logger,
+        IDomainService? domainService = null)
     {
         _registry = registry;
         _fileSystem = fileSystem;
         _logger = logger;
+        _domainService = domainService;
     }
 
     /// <summary>
     /// Discovers all user profiles on the machine.
     /// </summary>
-    public Task<List<UserProfile>> DiscoverAsync(CancellationToken ct = default)
+    public async Task<List<UserProfile>> DiscoverAsync(CancellationToken ct = default)
     {
         var profiles = new List<UserProfile>();
 
@@ -40,7 +45,7 @@ public class UserProfileDiscoveryService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to read profile list from registry");
-            return Task.FromResult(profiles);
+            return profiles;
         }
 
         foreach (var sid in sids)
@@ -65,11 +70,34 @@ public class UserProfileDiscoveryService
                 Username = username,
                 Sid = sid,
                 ProfilePath = profilePath,
-                IsLocal = !sid.Contains("-500"), // Rough heuristic; can be refined
                 Folders = DiscoverFolders(profilePath),
                 BrowserProfiles = DiscoverBrowserProfiles(profilePath),
                 EmailData = DiscoverEmailData(profilePath)
             };
+
+            // Classify account type using domain service if available
+            if (_domainService is not null)
+            {
+                try
+                {
+                    profile.AccountType = await _domainService.ClassifyUserAccountAsync(sid, ct);
+                    profile.IsLocal = profile.AccountType == UserAccountType.Local
+                                      || profile.AccountType == UserAccountType.Unknown;
+                    profile.DomainName = await _domainService.GetUserDomainAsync(sid, ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to classify account {Sid}, falling back to heuristic", sid);
+                    profile.AccountType = UserAccountType.Unknown;
+                    profile.IsLocal = true;
+                }
+            }
+            else
+            {
+                // Fallback: all S-1-5-21 accounts treated as local without domain service
+                profile.AccountType = UserAccountType.Unknown;
+                profile.IsLocal = true;
+            }
 
             profile.EstimatedSizeBytes = CalculateProfileSize(profile);
 
@@ -77,7 +105,7 @@ public class UserProfileDiscoveryService
             _logger.LogInformation("Discovered user profile: {Username} ({Sid})", username, sid);
         }
 
-        return Task.FromResult(profiles);
+        return profiles;
     }
 
     internal UserProfileFolders DiscoverFolders(string profilePath)

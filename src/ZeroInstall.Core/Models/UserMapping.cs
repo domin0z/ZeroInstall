@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using ZeroInstall.Core.Enums;
+
 namespace ZeroInstall.Core.Models;
 
 /// <summary>
@@ -51,4 +54,21 @@ public class UserMapping
     /// </summary>
     public bool RequiresPathRemapping =>
         !string.Equals(SourceUser.ProfilePath, DestinationProfilePath, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Warning message about domain migration implications for this user mapping.
+    /// </summary>
+    public string? DomainMigrationWarning { get; set; }
+
+    /// <summary>
+    /// What to do with the old account after migration (None, Disable, Delete).
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public PostMigrationAccountAction PostMigrationAction { get; set; }
+
+    /// <summary>
+    /// Whether to reassign the profile in-place to a new SID (domain migration)
+    /// instead of copying data.
+    /// </summary>
+    public bool ReassignInPlace { get; set; }
 }

@@ -2,6 +2,7 @@ using ZeroInstall.App.Services;
 using ZeroInstall.App.ViewModels;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.App.Tests.Services;
 
@@ -310,5 +311,25 @@ public class SessionStateTests
         _sut.Reset();
 
         _sut.IncludeBcdBackup.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DomainMigrationConfig_DefaultsNull()
+    {
+        _sut.DomainMigrationConfig.Should().BeNull();
+    }
+
+    [Fact]
+    public void Reset_ClearsDomainMigrationConfig()
+    {
+        _sut.DomainMigrationConfig = new DomainMigrationConfiguration
+        {
+            TargetDomain = "corp.local",
+            DomainCredentials = new DomainCredentials { Domain = "corp.local", Username = "admin", Password = "pass" }
+        };
+
+        _sut.Reset();
+
+        _sut.DomainMigrationConfig.Should().BeNull();
     }
 }

@@ -51,6 +51,21 @@ public class MigrationJob
     public TransportMethod TransportMethod { get; set; }
 
     /// <summary>
+    /// Domain info from the source machine.
+    /// </summary>
+    public DomainInfo? SourceDomainInfo { get; set; }
+
+    /// <summary>
+    /// Domain info from the destination machine.
+    /// </summary>
+    public DomainInfo? DestinationDomainInfo { get; set; }
+
+    /// <summary>
+    /// Domain migration configuration, if applicable.
+    /// </summary>
+    public DomainMigrationConfiguration? DomainMigrationConfig { get; set; }
+
+    /// <summary>
     /// User mappings (source → destination user accounts).
     /// </summary>
     public List<UserMapping> UserMappings { get; set; } = [];

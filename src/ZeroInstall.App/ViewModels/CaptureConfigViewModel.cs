@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using ZeroInstall.App.Services;
 using ZeroInstall.Core.Enums;
+using ZeroInstall.Core.Models;
 using ZeroInstall.Core.Services;
 using ZeroInstall.Core.Transport;
 
@@ -20,6 +21,7 @@ public partial class CaptureConfigViewModel : ViewModelBase
     private readonly IDialogService _dialogService;
     private readonly IBitLockerService? _bitLockerService;
     private readonly IFirmwareService? _firmwareService;
+    private readonly IDomainService? _domainService;
     private ISftpClientWrapper? _sftpClient;
 
     public override string Title => "Configure";
@@ -155,6 +157,25 @@ public partial class CaptureConfigViewModel : ViewModelBase
     [ObservableProperty]
     private string _bluetoothSpeedWarning = string.Empty;
 
+    // Domain info
+    [ObservableProperty]
+    private string _domainJoinTypeDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string _domainInfoDisplay = string.Empty;
+
+    [ObservableProperty]
+    private string _domainControllerDisplay = string.Empty;
+
+    [ObservableProperty]
+    private bool _showDomainInfo;
+
+    [ObservableProperty]
+    private string _domainWarning = string.Empty;
+
+    [ObservableProperty]
+    private bool _showDomainWarning;
+
     public ObservableCollection<DiscoveredBluetoothDevice> BluetoothDiscoveredDevices { get; } = [];
 
     public ObservableCollection<SftpFileInfo> SftpBrowseItems { get; } = [];
@@ -167,13 +188,15 @@ public partial class CaptureConfigViewModel : ViewModelBase
         INavigationService navigationService,
         IDialogService dialogService,
         IBitLockerService? bitLockerService = null,
-        IFirmwareService? firmwareService = null)
+        IFirmwareService? firmwareService = null,
+        IDomainService? domainService = null)
     {
         _session = session;
         _navigationService = navigationService;
         _dialogService = dialogService;
         _bitLockerService = bitLockerService;
         _firmwareService = firmwareService;
+        _domainService = domainService;
     }
 
     public override async Task OnNavigatedTo()
@@ -215,6 +238,9 @@ public partial class CaptureConfigViewModel : ViewModelBase
 
         // Check firmware info
         await CheckFirmwareInfoAsync();
+
+        // Check domain info
+        await CheckDomainInfoAsync();
     }
 
     private async Task CheckBitLockerStatusAsync()
@@ -291,6 +317,45 @@ public partial class CaptureConfigViewModel : ViewModelBase
         {
             ShowFirmwareInfo = false;
             ShowFirmwareWarning = false;
+        }
+    }
+
+    private async Task CheckDomainInfoAsync()
+    {
+        if (_domainService is null)
+        {
+            ShowDomainInfo = false;
+            ShowDomainWarning = false;
+            return;
+        }
+
+        try
+        {
+            var info = await _domainService.GetDomainInfoAsync();
+
+            DomainJoinTypeDisplay = info.JoinType.ToString();
+            DomainInfoDisplay = info.DomainOrWorkgroup;
+            DomainControllerDisplay = !string.IsNullOrEmpty(info.DomainController)
+                ? info.DomainController
+                : "N/A";
+
+            ShowDomainInfo = true;
+
+            if (info.IsDomainJoined)
+            {
+                DomainWarning = "Domain policies, GPOs, and trust relationships cannot be migrated " +
+                                "automatically. The destination machine must be joined to the domain separately.";
+                ShowDomainWarning = true;
+            }
+            else
+            {
+                ShowDomainWarning = false;
+            }
+        }
+        catch
+        {
+            ShowDomainInfo = false;
+            ShowDomainWarning = false;
         }
     }
 

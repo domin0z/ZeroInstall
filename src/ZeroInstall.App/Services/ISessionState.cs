@@ -1,6 +1,7 @@
 using ZeroInstall.App.ViewModels;
 using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
+using ZeroInstall.Core.Services;
 
 namespace ZeroInstall.App.Services;
 
@@ -42,6 +43,9 @@ public interface ISessionState
 
     // Firmware configuration
     bool IncludeBcdBackup { get; set; }
+
+    // Domain migration configuration
+    DomainMigrationConfiguration? DomainMigrationConfig { get; set; }
 
     /// <summary>
     /// Clears all state for a new migration.

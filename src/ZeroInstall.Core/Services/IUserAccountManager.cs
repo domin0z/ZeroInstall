@@ -35,4 +35,20 @@ public interface IUserAccountManager
     /// Lists all local user accounts on the machine.
     /// </summary>
     Task<IReadOnlyList<UserProfile>> ListLocalUsersAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes a local user account.
+    /// </summary>
+    Task<bool> DeleteUserAsync(string username, CancellationToken ct = default);
+
+    /// <summary>
+    /// Disables a local user account.
+    /// </summary>
+    Task<bool> DisableUserAsync(string username, CancellationToken ct = default);
+
+    /// <summary>
+    /// Configures auto-logon for a user account via registry.
+    /// Pass null/empty password to clear auto-logon.
+    /// </summary>
+    Task<bool> SetAutoLogonAsync(string username, string? password, CancellationToken ct = default);
 }

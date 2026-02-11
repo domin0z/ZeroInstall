@@ -1,4 +1,5 @@
 using ZeroInstall.App.ViewModels;
+using ZeroInstall.Core.Enums;
 using ZeroInstall.Core.Models;
 
 namespace ZeroInstall.App.Tests.ViewModels;
@@ -65,5 +66,90 @@ public class UserMappingEntryViewModelTests
         vm.DestinationUsername = "New";
 
         propertyChanged.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DomainWarning_WhenSet_ShowsDomainWarning()
+    {
+        var mapping = new UserMapping
+        {
+            SourceUser = new UserProfile { Username = "Bill", AccountType = UserAccountType.ActiveDirectory },
+            DomainMigrationWarning = "Account is domain-joined, requires SID reassignment"
+        };
+
+        var vm = new UserMappingEntryViewModel(mapping);
+
+        vm.DomainWarning.Should().Contain("SID reassignment");
+        vm.ShowDomainWarning.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DomainWarning_WhenNull_HidesDomainWarning()
+    {
+        var mapping = new UserMapping
+        {
+            SourceUser = new UserProfile { Username = "Bill", AccountType = UserAccountType.Local }
+        };
+
+        var vm = new UserMappingEntryViewModel(mapping);
+
+        vm.DomainWarning.Should().BeNull();
+        vm.ShowDomainWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public void PostMigrationAction_UpdatesModel()
+    {
+        var mapping = new UserMapping
+        {
+            SourceUser = new UserProfile { Username = "Bill" },
+            PostMigrationAction = PostMigrationAccountAction.None
+        };
+
+        var vm = new UserMappingEntryViewModel(mapping);
+        vm.PostMigrationAction = PostMigrationAccountAction.Disable;
+
+        mapping.PostMigrationAction.Should().Be(PostMigrationAccountAction.Disable);
+    }
+
+    [Fact]
+    public void ReassignInPlace_UpdatesModel()
+    {
+        var mapping = new UserMapping
+        {
+            SourceUser = new UserProfile { Username = "Bill" },
+            ReassignInPlace = false
+        };
+
+        var vm = new UserMappingEntryViewModel(mapping);
+        vm.ReassignInPlace = true;
+
+        mapping.ReassignInPlace.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShowDomainOptions_TrueForDomainAccount()
+    {
+        var mapping = new UserMapping
+        {
+            SourceUser = new UserProfile { Username = "Bill", AccountType = UserAccountType.ActiveDirectory }
+        };
+
+        var vm = new UserMappingEntryViewModel(mapping);
+
+        vm.ShowDomainOptions.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShowDomainOptions_FalseForLocalAccount()
+    {
+        var mapping = new UserMapping
+        {
+            SourceUser = new UserProfile { Username = "Bill", AccountType = UserAccountType.Local }
+        };
+
+        var vm = new UserMappingEntryViewModel(mapping);
+
+        vm.ShowDomainOptions.Should().BeFalse();
     }
 }

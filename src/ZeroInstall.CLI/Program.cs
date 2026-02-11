@@ -32,7 +32,8 @@ internal static class Program
             ProfileCommand.Create(verboseOption, jsonOption),
             JobCommand.Create(verboseOption, jsonOption),
             BitLockerCommand.Create(verboseOption, jsonOption),
-            FirmwareCommand.Create(verboseOption, jsonOption)
+            FirmwareCommand.Create(verboseOption, jsonOption),
+            DomainCommand.Create(verboseOption, jsonOption)
         };
 
         return await rootCommand.Parse(args).InvokeAsync();

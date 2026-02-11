@@ -143,6 +143,77 @@ public class UserAccountService : IUserAccountManager
         return Task.FromResult<IReadOnlyList<UserProfile>>(profiles);
     }
 
+    private const string WinlogonKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon";
+
+    public async Task<bool> DeleteUserAsync(string username, CancellationToken ct = default)
+    {
+        var result = await _processRunner.RunAsync("net", $"user \"{username}\" /delete", ct);
+
+        if (result.Success)
+        {
+            _logger.LogInformation("Deleted user account: {Username}", username);
+            return true;
+        }
+
+        _logger.LogError("Failed to delete user {Username}: {Error}", username, result.StandardError);
+        return false;
+    }
+
+    public async Task<bool> DisableUserAsync(string username, CancellationToken ct = default)
+    {
+        var result = await _processRunner.RunAsync("net", $"user \"{username}\" /active:no", ct);
+
+        if (result.Success)
+        {
+            _logger.LogInformation("Disabled user account: {Username}", username);
+            return true;
+        }
+
+        _logger.LogError("Failed to disable user {Username}: {Error}", username, result.StandardError);
+        return false;
+    }
+
+    public Task<bool> SetAutoLogonAsync(string username, string? password, CancellationToken ct = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrEmpty(password))
+            {
+                // Clear auto-logon
+                _registry.SetStringValue(
+                    RegistryHive.LocalMachine, RegistryView.Registry64,
+                    WinlogonKey, "AutoAdminLogon", "0");
+                _registry.SetStringValue(
+                    RegistryHive.LocalMachine, RegistryView.Registry64,
+                    WinlogonKey, "DefaultUserName", "");
+                _registry.SetStringValue(
+                    RegistryHive.LocalMachine, RegistryView.Registry64,
+                    WinlogonKey, "DefaultPassword", "");
+                _logger.LogInformation("Auto-logon cleared");
+            }
+            else
+            {
+                _registry.SetStringValue(
+                    RegistryHive.LocalMachine, RegistryView.Registry64,
+                    WinlogonKey, "AutoAdminLogon", "1");
+                _registry.SetStringValue(
+                    RegistryHive.LocalMachine, RegistryView.Registry64,
+                    WinlogonKey, "DefaultUserName", username);
+                _registry.SetStringValue(
+                    RegistryHive.LocalMachine, RegistryView.Registry64,
+                    WinlogonKey, "DefaultPassword", password);
+                _logger.LogInformation("Auto-logon configured for {Username}", username);
+            }
+
+            return Task.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set auto-logon for {Username}", username);
+            return Task.FromResult(false);
+        }
+    }
+
     internal static string? ParseSidFromOutput(string output)
     {
         var trimmed = output.Trim();

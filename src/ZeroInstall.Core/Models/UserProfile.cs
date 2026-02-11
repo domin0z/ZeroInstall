@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using ZeroInstall.Core.Enums;
+
 namespace ZeroInstall.Core.Models;
 
 /// <summary>
@@ -24,6 +27,18 @@ public class UserProfile
     /// Whether this is a local account (vs. domain/Microsoft account).
     /// </summary>
     public bool IsLocal { get; set; }
+
+    /// <summary>
+    /// The domain or workgroup name for this account (e.g., "CORP", "AzureAD").
+    /// Null for local accounts.
+    /// </summary>
+    public string? DomainName { get; set; }
+
+    /// <summary>
+    /// The type of account (Local, ActiveDirectory, AzureAd, MicrosoftAccount).
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public UserAccountType AccountType { get; set; }
 
     /// <summary>
     /// Known folder paths within this profile.

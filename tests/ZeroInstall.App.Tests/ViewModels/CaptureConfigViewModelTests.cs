@@ -566,4 +566,118 @@ public class CaptureConfigViewModelTests
     }
 
     #endregion
+
+    #region Domain Info
+
+    [Fact]
+    public async Task OnNavigatedTo_DomainServiceShowsInfo_ForAD()
+    {
+        var domainService = Substitute.For<IDomainService>();
+        domainService.GetDomainInfoAsync(Arg.Any<CancellationToken>())
+            .Returns(new DomainInfo
+            {
+                JoinType = DomainJoinType.ActiveDirectory,
+                DomainOrWorkgroup = "corp.local",
+                DomainController = "DC01.corp.local"
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, domainService: domainService);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowDomainInfo.Should().BeTrue();
+        vm.DomainJoinTypeDisplay.Should().Be("ActiveDirectory");
+        vm.DomainInfoDisplay.Should().Be("corp.local");
+        vm.DomainControllerDisplay.Should().Be("DC01.corp.local");
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_DomainAD_ShowsWarning()
+    {
+        var domainService = Substitute.For<IDomainService>();
+        domainService.GetDomainInfoAsync(Arg.Any<CancellationToken>())
+            .Returns(new DomainInfo
+            {
+                JoinType = DomainJoinType.ActiveDirectory,
+                DomainOrWorkgroup = "corp.local"
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, domainService: domainService);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowDomainWarning.Should().BeTrue();
+        vm.DomainWarning.Should().Contain("cannot be migrated");
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_DomainWorkgroup_NoWarning()
+    {
+        var domainService = Substitute.For<IDomainService>();
+        domainService.GetDomainInfoAsync(Arg.Any<CancellationToken>())
+            .Returns(new DomainInfo
+            {
+                JoinType = DomainJoinType.Workgroup,
+                DomainOrWorkgroup = "WORKGROUP"
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, domainService: domainService);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowDomainInfo.Should().BeTrue();
+        vm.ShowDomainWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_NullDomainService_HidesDomainInfo()
+    {
+        _session.SelectedItems = [];
+
+        await _sut.OnNavigatedTo();
+
+        _sut.ShowDomainInfo.Should().BeFalse();
+        _sut.ShowDomainWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_DomainServiceThrows_HidesDomainInfo()
+    {
+        var domainService = Substitute.For<IDomainService>();
+        domainService.GetDomainInfoAsync(Arg.Any<CancellationToken>())
+            .Returns<DomainInfo>(_ => throw new InvalidOperationException("error"));
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, domainService: domainService);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.ShowDomainInfo.Should().BeFalse();
+        vm.ShowDomainWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_DomainNoDC_ShowsNA()
+    {
+        var domainService = Substitute.For<IDomainService>();
+        domainService.GetDomainInfoAsync(Arg.Any<CancellationToken>())
+            .Returns(new DomainInfo
+            {
+                JoinType = DomainJoinType.Workgroup,
+                DomainOrWorkgroup = "WORKGROUP",
+                DomainController = null
+            });
+
+        var vm = new CaptureConfigViewModel(_session, _navService, _dialogService, domainService: domainService);
+        _session.SelectedItems = [];
+
+        await vm.OnNavigatedTo();
+
+        vm.DomainControllerDisplay.Should().Be("N/A");
+    }
+
+    #endregion
 }
