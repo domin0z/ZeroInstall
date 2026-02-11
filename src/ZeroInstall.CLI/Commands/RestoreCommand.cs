@@ -79,11 +79,22 @@ internal static class RestoreCommand
             Description = "Data was not compressed during upload"
         };
 
+        var btAddressOption = new Option<string?>("--bt-address")
+        {
+            Description = "Bluetooth address of the source machine (client mode)"
+        };
+
+        var btServerOption = new Option<bool>("--bt-server")
+        {
+            Description = "Run as Bluetooth server (listen for incoming connection)"
+        };
+
         var command = new Command("restore", "Restore captured data to this machine")
         {
             inputOption, userMapOption, createUsersOption,
             sftpHostOption, sftpPortOption, sftpUserOption, sftpPassOption, sftpKeyOption,
-            sftpPathOption, encryptOption, noCompressOption
+            sftpPathOption, encryptOption, noCompressOption,
+            btAddressOption, btServerOption
         };
 
         command.SetAction(async (parseResult, ct) =>

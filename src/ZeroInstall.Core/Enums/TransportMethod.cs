@@ -23,5 +23,11 @@ public enum TransportMethod
     /// <summary>
     /// SFTP transfer to/from a remote NAS or server.
     /// </summary>
-    Sftp
+    Sftp,
+
+    /// <summary>
+    /// Bluetooth RFCOMM transfer between nearby machines.
+    /// Slow (~250 KB/s) but requires no network infrastructure.
+    /// </summary>
+    Bluetooth
 }

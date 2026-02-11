@@ -35,6 +35,11 @@ internal sealed class SessionState : ISessionState
     public string SftpEncryptionPassphrase { get; set; } = string.Empty;
     public bool SftpCompressBeforeUpload { get; set; } = true;
 
+    // Bluetooth configuration
+    public string BluetoothDeviceName { get; set; } = string.Empty;
+    public ulong BluetoothDeviceAddress { get; set; }
+    public bool BluetoothIsServer { get; set; }
+
     public void Reset()
     {
         Role = default;
@@ -58,5 +63,8 @@ internal sealed class SessionState : ISessionState
         SftpRemoteBasePath = "/backups/zim";
         SftpEncryptionPassphrase = string.Empty;
         SftpCompressBeforeUpload = true;
+        BluetoothDeviceName = string.Empty;
+        BluetoothDeviceAddress = 0;
+        BluetoothIsServer = false;
     }
 }

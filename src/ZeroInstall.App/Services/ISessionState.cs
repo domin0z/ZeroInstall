@@ -35,6 +35,11 @@ public interface ISessionState
     string SftpEncryptionPassphrase { get; set; }
     bool SftpCompressBeforeUpload { get; set; }
 
+    // Bluetooth configuration
+    string BluetoothDeviceName { get; set; }
+    ulong BluetoothDeviceAddress { get; set; }
+    bool BluetoothIsServer { get; set; }
+
     /// <summary>
     /// Clears all state for a new migration.
     /// </summary>

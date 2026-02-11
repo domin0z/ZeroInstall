@@ -104,10 +104,34 @@ public partial class CaptureConfigViewModel : ViewModelBase
     [ObservableProperty]
     private string _sftpConnectionStatus = string.Empty;
 
+    // Transport config — Bluetooth
+    [ObservableProperty]
+    private string _bluetoothDeviceName = string.Empty;
+
+    [ObservableProperty]
+    private ulong _bluetoothDeviceAddress;
+
+    [ObservableProperty]
+    private bool _bluetoothIsServer;
+
+    [ObservableProperty]
+    private bool _bluetoothIsScanning;
+
+    [ObservableProperty]
+    private bool _bluetoothIsConnected;
+
+    [ObservableProperty]
+    private string _bluetoothConnectionStatus = string.Empty;
+
+    [ObservableProperty]
+    private string _bluetoothSpeedWarning = string.Empty;
+
+    public ObservableCollection<DiscoveredBluetoothDevice> BluetoothDiscoveredDevices { get; } = [];
+
     public ObservableCollection<SftpFileInfo> SftpBrowseItems { get; } = [];
 
     public ObservableCollection<TransportMethod> TransportMethods { get; } =
-        [TransportMethod.ExternalStorage, TransportMethod.NetworkShare, TransportMethod.DirectWiFi, TransportMethod.Sftp];
+        [TransportMethod.ExternalStorage, TransportMethod.NetworkShare, TransportMethod.DirectWiFi, TransportMethod.Sftp, TransportMethod.Bluetooth];
 
     public CaptureConfigViewModel(
         ISessionState session,
@@ -150,6 +174,9 @@ public partial class CaptureConfigViewModel : ViewModelBase
         SftpRemoteBasePath = _session.SftpRemoteBasePath;
         SftpEncryptionPassphrase = _session.SftpEncryptionPassphrase;
         SftpCompressBeforeUpload = _session.SftpCompressBeforeUpload;
+        BluetoothDeviceName = _session.BluetoothDeviceName;
+        BluetoothDeviceAddress = _session.BluetoothDeviceAddress;
+        BluetoothIsServer = _session.BluetoothIsServer;
 
         // Check BitLocker status on system drive
         await CheckBitLockerStatusAsync();
@@ -303,7 +330,77 @@ public partial class CaptureConfigViewModel : ViewModelBase
         _session.SftpRemoteBasePath = SftpRemoteBasePath;
         _session.SftpEncryptionPassphrase = SftpEncryptionPassphrase;
         _session.SftpCompressBeforeUpload = SftpCompressBeforeUpload;
+        _session.BluetoothDeviceName = BluetoothDeviceName;
+        _session.BluetoothDeviceAddress = BluetoothDeviceAddress;
+        _session.BluetoothIsServer = BluetoothIsServer;
         _navigationService.NavigateTo<MigrationProgressViewModel>();
+    }
+
+    [RelayCommand]
+    private async Task BluetoothScanAsync()
+    {
+        BluetoothIsScanning = true;
+        BluetoothDiscoveredDevices.Clear();
+        BluetoothConnectionStatus = "Scanning for nearby devices...";
+
+        try
+        {
+            var adapter = new BluetoothAdapter();
+            var devices = await adapter.DiscoverDevicesAsync(TimeSpan.FromSeconds(10));
+            foreach (var device in devices)
+                BluetoothDiscoveredDevices.Add(device);
+
+            BluetoothConnectionStatus = $"Found {devices.Count} device(s)";
+        }
+        catch (Exception ex)
+        {
+            BluetoothConnectionStatus = $"Scan failed: {ex.Message}";
+        }
+        finally
+        {
+            BluetoothIsScanning = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task BluetoothPairAndConnectAsync(DiscoveredBluetoothDevice? device)
+    {
+        if (device is null) return;
+
+        BluetoothConnectionStatus = $"Pairing with {device.DeviceName}...";
+
+        try
+        {
+            var adapter = new BluetoothAdapter();
+            if (!device.IsPaired)
+            {
+                var paired = await adapter.PairAsync(device.Address);
+                if (!paired)
+                {
+                    BluetoothConnectionStatus = "Pairing failed";
+                    return;
+                }
+            }
+
+            BluetoothDeviceName = device.DeviceName;
+            BluetoothDeviceAddress = device.Address;
+            BluetoothIsConnected = true;
+            BluetoothConnectionStatus = $"Paired with {device.DeviceName}";
+
+            // Calculate speed warning based on total data size
+            var totalBytes = _session.SelectedItems
+                .Where(i => i.IsSelected)
+                .Sum(i => i.EstimatedSizeBytes);
+            var estimate = BluetoothTransport.EstimateTransferTime(totalBytes);
+            if (estimate.TotalMinutes > 5)
+            {
+                BluetoothSpeedWarning = $"Estimated transfer time: {estimate.TotalMinutes:F0} minutes at Bluetooth speeds (~250 KB/s)";
+            }
+        }
+        catch (Exception ex)
+        {
+            BluetoothConnectionStatus = $"Connection failed: {ex.Message}";
+        }
     }
 
     internal bool CanStartCapture() => !string.IsNullOrWhiteSpace(OutputPath);

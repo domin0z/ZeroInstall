@@ -159,9 +159,10 @@ public class CaptureConfigViewModelTests
     }
 
     [Fact]
-    public void TransportMethods_HasFourEntries()
+    public void TransportMethods_HasFiveEntries_Legacy()
     {
-        _sut.TransportMethods.Should().HaveCount(4);
+        // Updated from 4 to 5 with Bluetooth transport
+        _sut.TransportMethods.Should().HaveCount(5);
     }
 
     [Fact]
@@ -371,6 +372,91 @@ public class CaptureConfigViewModelTests
         await vm.OnNavigatedTo();
 
         vm.ShowBitLockerWarning.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region Bluetooth
+
+    [Fact]
+    public void TransportMethods_IncludesBluetooth()
+    {
+        _sut.TransportMethods.Should().Contain(TransportMethod.Bluetooth);
+    }
+
+    [Fact]
+    public void TransportMethods_HasFiveEntries()
+    {
+        _sut.TransportMethods.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public void BluetoothDefaultValues_AreCorrect()
+    {
+        _sut.BluetoothDeviceName.Should().BeEmpty();
+        _sut.BluetoothDeviceAddress.Should().Be(0UL);
+        _sut.BluetoothIsServer.Should().BeFalse();
+        _sut.BluetoothIsScanning.Should().BeFalse();
+        _sut.BluetoothIsConnected.Should().BeFalse();
+        _sut.BluetoothConnectionStatus.Should().BeEmpty();
+        _sut.BluetoothSpeedWarning.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BluetoothDiscoveredDevices_DefaultsEmpty()
+    {
+        _sut.BluetoothDiscoveredDevices.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_RestoresBluetoothConfigFromSession()
+    {
+        _session.BluetoothDeviceName = "TestPC";
+        _session.BluetoothDeviceAddress = 0xAABBCCDDEEFF;
+        _session.BluetoothIsServer = true;
+
+        await _sut.OnNavigatedTo();
+
+        _sut.BluetoothDeviceName.Should().Be("TestPC");
+        _sut.BluetoothDeviceAddress.Should().Be(0xAABBCCDDEEFF);
+        _sut.BluetoothIsServer.Should().BeTrue();
+    }
+
+    [Fact]
+    public void StartCapture_SavesBluetoothConfigToSession()
+    {
+        _sut.OutputPath = @"E:\out";
+        _sut.SelectedTransport = TransportMethod.Bluetooth;
+        _sut.BluetoothDeviceName = "RemotePC";
+        _sut.BluetoothDeviceAddress = 12345UL;
+        _sut.BluetoothIsServer = true;
+
+        _sut.StartCaptureCommand.Execute(null);
+
+        _session.BluetoothDeviceName.Should().Be("RemotePC");
+        _session.BluetoothDeviceAddress.Should().Be(12345UL);
+        _session.BluetoothIsServer.Should().BeTrue();
+        _session.TransportMethod.Should().Be(TransportMethod.Bluetooth);
+    }
+
+    [Fact]
+    public void BluetoothProperties_CanBeSet()
+    {
+        _sut.BluetoothDeviceName = "Device1";
+        _sut.BluetoothDeviceAddress = 42UL;
+        _sut.BluetoothIsServer = true;
+        _sut.BluetoothIsScanning = true;
+        _sut.BluetoothIsConnected = true;
+        _sut.BluetoothConnectionStatus = "Connected";
+        _sut.BluetoothSpeedWarning = "Slow transfer";
+
+        _sut.BluetoothDeviceName.Should().Be("Device1");
+        _sut.BluetoothDeviceAddress.Should().Be(42UL);
+        _sut.BluetoothIsServer.Should().BeTrue();
+        _sut.BluetoothIsScanning.Should().BeTrue();
+        _sut.BluetoothIsConnected.Should().BeTrue();
+        _sut.BluetoothConnectionStatus.Should().Be("Connected");
+        _sut.BluetoothSpeedWarning.Should().Be("Slow transfer");
     }
 
     #endregion

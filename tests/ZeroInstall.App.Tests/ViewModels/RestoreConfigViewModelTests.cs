@@ -127,4 +127,47 @@ public class RestoreConfigViewModelTests
             Arg.Any<string?>(),
             Arg.Is<string?>(s => s == @"E:\current"));
     }
+
+    #region Bluetooth
+
+    [Fact]
+    public void BluetoothDefaultValues_AreCorrect()
+    {
+        _sut.BluetoothDeviceName.Should().BeEmpty();
+        _sut.BluetoothDeviceAddress.Should().Be(0UL);
+        _sut.BluetoothIsServer.Should().BeTrue(); // Restore defaults to server mode
+        _sut.BluetoothIsScanning.Should().BeFalse();
+        _sut.BluetoothIsConnected.Should().BeFalse();
+        _sut.BluetoothConnectionStatus.Should().BeEmpty();
+        _sut.BluetoothSpeedWarning.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BluetoothDiscoveredDevices_DefaultsEmpty()
+    {
+        _sut.BluetoothDiscoveredDevices.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task OnNavigatedTo_RestoresBluetoothConfigFromSession()
+    {
+        _session.BluetoothDeviceName = "SourcePC";
+        _session.BluetoothDeviceAddress = 0xDEADBEEF;
+        _session.BluetoothIsServer = false;
+
+        await _sut.OnNavigatedTo();
+
+        _sut.BluetoothDeviceName.Should().Be("SourcePC");
+        _sut.BluetoothDeviceAddress.Should().Be(0xDEADBEEF);
+        _sut.BluetoothIsServer.Should().BeFalse();
+    }
+
+    [Fact]
+    public void BluetoothIsServer_DefaultsTrue_ForRestore()
+    {
+        // Restore side should default to server (listening) mode
+        _sut.BluetoothIsServer.Should().BeTrue();
+    }
+
+    #endregion
 }

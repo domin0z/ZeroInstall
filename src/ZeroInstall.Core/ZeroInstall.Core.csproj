@@ -19,6 +19,7 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="8.*" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.*" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.*" />
+    <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.2.*" />
     <PackageReference Include="SSH.NET" Version="2024.1.*" />
     <PackageReference Include="System.Text.Json" Version="8.*" />
   </ItemGroup>

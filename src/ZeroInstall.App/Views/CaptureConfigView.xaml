@@ -9,6 +9,8 @@
 
     <UserControl.Resources>
         <converters:TransportMethodToVisibilityConverter x:Key="TransportToVisibility" />
+        <converters:InverseBoolConverter x:Key="InverseBool" />
+        <converters:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVis" />
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
@@ -277,6 +279,102 @@
 
                         <!-- Connection Status -->
                         <TextBlock Text="{Binding SftpConnectionStatus}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Bluetooth Config -->
+                <Border Background="{StaticResource BackgroundWhiteBrush}"
+                        BorderBrush="{StaticResource BorderGrayBrush}"
+                        BorderThickness="1" CornerRadius="6"
+                        Padding="16,12"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding SelectedTransport, Converter={StaticResource TransportToVisibility}, ConverterParameter=Bluetooth}">
+                    <StackPanel>
+                        <TextBlock Text="Bluetooth Settings"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{StaticResource PrimaryTealBrush}"
+                                   Margin="0,0,0,8" />
+
+                        <!-- Speed Warning Banner -->
+                        <Border Background="#FFF3E0"
+                                BorderBrush="#F57C00"
+                                BorderThickness="1" CornerRadius="4"
+                                Padding="10,8"
+                                Margin="0,0,0,10">
+                            <TextBlock Text="Bluetooth Classic tops out at ~250 KB/s. Suitable for small transfers (settings, profiles) but slow for large data."
+                                       FontSize="11"
+                                       Foreground="#E65100"
+                                       TextWrapping="Wrap" />
+                        </Border>
+
+                        <!-- Server/Client Radio Buttons -->
+                        <TextBlock Text="Mode" FontSize="12" Margin="0,0,0,4" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <RadioButton Content="Server (listen)"
+                                         IsChecked="{Binding BluetoothIsServer}"
+                                         Margin="0,0,16,0" FontSize="12" />
+                            <RadioButton Content="Client (connect)"
+                                         IsChecked="{Binding BluetoothIsServer, Converter={StaticResource InverseBool}}"
+                                         FontSize="12" />
+                        </StackPanel>
+
+                        <!-- Client Mode: Scan + Device List (hidden when server) -->
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding BluetoothIsServer}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Button Content="Scan for Devices"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding BluetoothScanCommand}"
+                                    Padding="12,6" Margin="0,0,0,8" />
+
+                            <ListBox ItemsSource="{Binding BluetoothDiscoveredDevices}"
+                                     MaxHeight="120"
+                                     FontSize="12"
+                                     Margin="0,0,0,8"
+                                     x:Name="BluetoothDeviceList">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <Run Text="{Binding DeviceName, Mode=OneWay}" />
+                                            <Run Text=" (" /><Run Text="{Binding AddressString, Mode=OneWay}" /><Run Text=")" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <Button Content="Pair &amp; Connect"
+                                    Style="{StaticResource AccentButton}"
+                                    Command="{Binding BluetoothPairAndConnectCommand}"
+                                    CommandParameter="{Binding SelectedItem, ElementName=BluetoothDeviceList}"
+                                    Padding="12,6" Margin="0,0,0,8" />
+                        </StackPanel>
+
+                        <!-- Dynamic Speed Warning -->
+                        <Border Background="#FFF3E0"
+                                BorderBrush="#F57C00"
+                                BorderThickness="1" CornerRadius="4"
+                                Padding="10,6"
+                                Margin="0,0,0,8"
+                                Visibility="{Binding BluetoothSpeedWarning, Converter={StaticResource NonEmptyStringToVis}}">
+                            <TextBlock Text="{Binding BluetoothSpeedWarning}"
+                                       FontSize="11"
+                                       Foreground="#E65100"
+                                       TextWrapping="Wrap" />
+                        </Border>
+
+                        <!-- Connection Status -->
+                        <TextBlock Text="{Binding BluetoothConnectionStatus}"
                                    FontSize="11"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    Margin="0,4,0,0" />

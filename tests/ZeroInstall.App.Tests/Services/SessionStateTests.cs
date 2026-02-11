@@ -242,4 +242,49 @@ public class SessionStateTests
         _sut.SftpRemoteBasePath.Should().Be("/backups/zim");
         _sut.SftpCompressBeforeUpload.Should().BeTrue();
     }
+
+    [Fact]
+    public void BluetoothConfig_DefaultValues()
+    {
+        _sut.BluetoothDeviceName.Should().BeEmpty();
+        _sut.BluetoothDeviceAddress.Should().Be(0UL);
+        _sut.BluetoothIsServer.Should().BeFalse();
+    }
+
+    [Fact]
+    public void BluetoothConfig_SetProperties_ShouldRetainValues()
+    {
+        _sut.BluetoothDeviceName = "TestPC";
+        _sut.BluetoothDeviceAddress = 0xAABBCCDDEEFF;
+        _sut.BluetoothIsServer = true;
+
+        _sut.BluetoothDeviceName.Should().Be("TestPC");
+        _sut.BluetoothDeviceAddress.Should().Be(0xAABBCCDDEEFF);
+        _sut.BluetoothIsServer.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Reset_ClearsBluetoothConfig()
+    {
+        _sut.BluetoothDeviceName = "RemotePC";
+        _sut.BluetoothDeviceAddress = 12345UL;
+        _sut.BluetoothIsServer = true;
+
+        _sut.Reset();
+
+        _sut.BluetoothDeviceName.Should().BeEmpty();
+        _sut.BluetoothDeviceAddress.Should().Be(0UL);
+        _sut.BluetoothIsServer.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Reset_BluetoothConfig_IsIdempotent()
+    {
+        _sut.BluetoothDeviceName = "PC1";
+
+        _sut.Reset();
+        _sut.Reset();
+
+        _sut.BluetoothDeviceName.Should().BeEmpty();
+    }
 }
